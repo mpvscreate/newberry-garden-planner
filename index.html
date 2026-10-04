@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Garden Planner — Newberry House</title>
+<meta name="theme-color" content="#1f3d1d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+:root {
+  --pakistan-green:#1f3d1d;
+  --asparagus:#7da24b;
+  --field-drab:#775d2f;
+  --dun:#d1c7a3;
+  --ivory:#fffdee;
+  --text:#1f3d1d;
+  --text-muted:#775d2f;
+  --bg:#f5f4ec;
+  --surface:#ffffff;
+  --border:#e0e1de;
+  --shadow:0 1px 3px rgba(20,30,20,0.08);
+  --sidebar-w:240px;
+}
+html[data-theme="dark"] {
+  --text:#eef2ea;
+  --text-muted:#9db19c;
+  --bg:#121a15;
+  --surface:#1a241d;
+  --border:#2b362e;
+  --shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column;}
+
+/* Topbar */
+.topbar{
+  background:linear-gradient(180deg,var(--pakistan-green),var(--asparagus));
+  color:var(--ivory); padding:8px 16px; display:flex; align-items:center; gap:12px; z-index:20; flex-shrink:0;
+}
+.topbar h1{font-size:16px; font-weight:700; flex:1;}
+.topbar-btn{background:rgba(255,253,238,0.12); border:1px solid rgba(255,253,238,0.3); color:var(--ivory); font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer; white-space:nowrap;}
+.topbar-btn:hover{background:rgba(255,253,238,0.22);}
+.topbar-btn.active{background:rgba(125,162,75,0.4); border-color:rgba(125,162,75,0.7);}
+.topbar select{background:rgba(255,253,238,0.12); border:1px solid rgba(255,253,238,0.3); color:var(--ivory); font-size:12px; padding:6px 8px; border-radius:7px; cursor:pointer;}
+.topbar select option{background:var(--surface); color:var(--text);}
+.zoom-display{font-size:11px; color:var(--dun); min-width:40px; text-align:center;}
+
+/* Layout */
+.workspace{display:flex; flex:1; overflow:hidden;}
+
+/* Sidebar */
+.sidebar{
+  width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; z-index:10;
+}
+.sidebar-tabs{display:flex; border-bottom:1px solid var(--border);}
+.sidebar-tab{flex:1; padding:8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; text-align:center; cursor:pointer; border:none; background:none; color:var(--text-muted); border-bottom:2px solid transparent;}
+.sidebar-tab.active{color:var(--asparagus); border-bottom-color:var(--asparagus);}
+.sidebar-content{flex:1; overflow-y:auto; padding:10px;}
+
+/* Element library */
+.lib-section{margin-bottom:12px;}
+.lib-section-title{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:6px;}
+.lib-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
+.lib-item{
+  display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px;
+  background:var(--bg); border:1px solid var(--border); border-radius:8px; cursor:grab;
+  font-size:10px; color:var(--text); text-align:center; transition:border-color .15s, transform .1s;
+  user-select:none;
+}
+.lib-item:hover{border-color:var(--asparagus); transform:translateY(-1px);}
+.lib-item:active{cursor:grabbing; transform:scale(0.95);}
+.lib-icon{font-size:22px; line-height:1;}
+
+/* Properties panel */
+.prop-group{margin-bottom:14px;}
+.prop-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:4px;}
+.prop-row{display:flex; gap:6px; margin-bottom:6px; align-items:center;}
+.prop-input{flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:12px; color:var(--text); min-width:0;}
+.prop-input:focus{outline:none; box-shadow:inset 0 0 0 1.5px var(--asparagus);}
+.prop-unit{font-size:10px; color:var(--text-muted); flex-shrink:0; width:20px;}
+.prop-btn{background:var(--bg); border:1px solid var(--border); color:var(--text); font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer;}
+.prop-btn:hover{background:var(--border);}
+.prop-btn.danger{color:#b3452f;}
+.prop-color{width:28px; height:28px; border:1px solid var(--border); border-radius:6px; cursor:pointer; padding:0;}
+
+/* Designs list */
+.design-item{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; cursor:pointer; background:var(--bg);}
+.design-item:hover{border-color:var(--asparagus);}
+.design-item.active{border-color:var(--asparagus); background:rgba(125,162,75,0.08);}
+.design-name{flex:1; font-size:12px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.design-date{font-size:10px; color:var(--text-muted);}
+.design-del{background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 4px;}
+.design-del:hover{color:#b3452f;}
+
+/* Canvas area */
+.canvas-wrap{flex:1; position:relative; overflow:hidden; background:#e8e6dc;}
+html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
+.canvas-wrap canvas{position:absolute; top:0; left:0;}
+
+/* Status bar */
+.statusbar{background:var(--surface); border-top:1px solid var(--border); padding:4px 16px; font-size:11px; color:var(--text-muted); display:flex; gap:16px; flex-shrink:0;}
+
+/* Mobile */
+@media(max-width:768px){
+  .sidebar{position:absolute; left:0; top:0; bottom:0; z-index:30; transform:translateX(-100%); transition:transform .2s ease; box-shadow:4px 0 20px rgba(0,0,0,0.15);}
+  .sidebar.open{transform:translateX(0);}
+  .sidebar-backdrop{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:25;}
+  .sidebar-backdrop.open{display:block;}
+  .mobile-toggle{display:flex !important;}
+}
+.mobile-toggle{display:none; background:none; border:none; color:var(--ivory); font-size:20px; cursor:pointer; padding:4px;}
+
+/* Helpers */
+.empty-state{text-align:center; padding:30px 16px; color:var(--text-muted); font-size:12px;}
+.btn-sm{font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer; border:1px solid transparent;}
+.btn-primary{background:var(--asparagus); color:var(--ivory); border-color:var(--asparagus);}
+.btn-primary:hover{filter:brightness(1.06);}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+  <h1>Garden Planner</h1>
+  <span class="zoom-display" id="zoomDisplay">100%</span>
+  <button class="topbar-btn" onclick="zoomCanvas(0.1)">+</button>
+  <button class="topbar-btn" onclick="zoomCanvas(-0.1)">−</button>
+  <button class="topbar-btn" onclick="resetZoom()">Fit</button>
+  <select id="gridSize" onchange="setGrid(this.value)">
+    <option value="20">Grid: 20px</option>
+    <option value="40" selected>Grid: 40px</option>
+    <option value="0">Grid: Off</option>
+  </select>
+  <button class="topbar-btn" onclick="toggleSnap()" id="snapBtn">Snap: On</button>
+  <button class="topbar-btn" onclick="undoAction()">Undo</button>
+  <button class="topbar-btn" onclick="redoAction()">Redo</button>
+  <button class="topbar-btn" onclick="toggleTheme()">Dark</button>
+</header>
+
+<div class="workspace">
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-tabs">
+      <button class="sidebar-tab active" onclick="switchTab('library',this)">Library</button>
+      <button class="sidebar-tab" onclick="switchTab('properties',this)">Properties</button>
+      <button class="sidebar-tab" onclick="switchTab('designs',this)">Designs</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent"></div>
+  </aside>
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="gardenCanvas"></canvas>
+  </div>
+</div>
+
+<div class="statusbar">
+  <span id="statusCoords">0, 0</span>
+  <span id="statusSelected">No selection</span>
+  <span id="statusObjects">0 objects</span>
+</div>
+
+<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script>
+/* ── State ─────────────────────────────────────── */
+let canvas, gridSize = 40, snapOn = true, currentDesignId = null;
+let undoStack = [], redoStack = [], maxUndo = 40;
+const designs = JSON.parse(localStorage.getItem('nb_garden_designs') || '{}');
+
+/* ── Plant / element library ───────────────────── */
+const LIBRARY = [
+  { section: 'Trees', items: [
+    { name:'Oak',       icon:'🌳', w:80, h:80, color:'#2d5a1e', shape:'circle' },
+    { name:'Pine',      icon:'🌲', w:60, h:60, color:'#1e4a1e', shape:'circle' },
+    { name:'Palm',      icon:'🌴', w:50, h:50, color:'#4a8a2a', shape:'circle' },
+    { name:'Fruit',     icon:'🍎', w:60, h:60, color:'#5a9a3a', shape:'circle' },
+    { name:'Small',     icon:'🌿', w:40, h:40, color:'#6aaa4a', shape:'circle' },
+  ]},
+  { section: 'Shrubs & Beds', items: [
+    { name:'Hedge',     icon:'🟩', w:120,h:30, color:'#3a7a2a', shape:'rect' },
+    { name:'Bush',      icon:'🌿', w:50, h:50, color:'#4a8a3a', shape:'circle' },
+    { name:'Flower Bed',icon:'🌸', w:100,h:60, color:'#c97ab5', shape:'rect' },
+    { name:'Veggie Bed',icon:'🥕', w:120,h:60, color:'#6a4a2a', shape:'rect' },
+    { name:'Grass',     icon:'🟢', w:100,h:100,color:'#5aaa3a', shape:'rect' },
+  ]},
+  { section: 'Hardscape', items: [
+    { name:'Path',      icon:'🟫', w:160,h:30, color:'#a89070', shape:'rect' },
+    { name:'Patio',     icon:'⬜', w:120,h:100,color:'#c0b8a0', shape:'rect' },
+    { name:'Deck',      icon:'🟫', w:120,h:80, color:'#8a6a40', shape:'rect' },
+    { name:'Wall',      icon:'🧱', w:140,h:16, color:'#7a6a5a', shape:'rect' },
+    { name:'Fence',     icon:'🏗️', w:160,h:10, color:'#9a8a6a', shape:'rect' },
+    { name:'Steps',     icon:'🪜', w:60, h:40, color:'#8a7a6a', shape:'rect' },
+  ]},
+  { section: 'Water', items: [
+    { name:'Pond',      icon:'💧', w:80, h:60, color:'#4a8ab0', shape:'ellipse' },
+    { name:'Pool',      icon:'🏊', w:120,h:80, color:'#5aaaca', shape:'rect' },
+    { name:'Fountain',  icon:'⛲', w:50, h:50, color:'#6abadd', shape:'circle' },
+  ]},
+  { section: 'Structures', items: [
+    { name:'House',     icon:'🏠', w:160,h:120,color:'#8a7a6a', shape:'rect' },
+    { name:'Shed',      icon:'🏚️', w:80, h:60, color:'#7a6a5a', shape:'rect' },
+    { name:'Pergola',   icon:'🏗️', w:100,h:80, color:'#b0a080', shape:'rect' },
+    { name:'Greenhouse',icon:'🏡', w:100,h:60, color:'#90c070', shape:'rect' },
+    { name:'Bench',     icon:'🪑', w:60, h:20, color:'#6a5a4a', shape:'rect' },
+  ]},
+];
+
+/* ── Init ──────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  initCanvas();
+  renderTab('library');
+  autoLoad();
+  window.addEventListener('resize', resizeCanvas);
+});
+
+function initCanvas(){
+  const wrap = document.getElementById('canvasWrap');
+  canvas = new fabric.Canvas('gardenCanvas', {
+    width: wrap.clientWidth,
+    height: wrap.clientHeight,
+    backgroundColor: 'transparent',
+    selection: true,
+    preserveObjectStacking: true,
+  });
+  drawGrid();
+  canvas.on('mouse:move', e => {
+    const p = canvas.getPointer(e.e);
+    document.getElementById('statusCoords').textContent = Math.round(p.x) + ', ' + Math.round(p.y);
+  });
+  canvas.on('selection:created', updateSelection);
+  canvas.on('selection:updated', updateSelection);
+  canvas.on('selection:cleared', () => {
+    document.getElementById('statusSelected').textContent = 'No selection';
+    if(document.querySelector('.sidebar-tab.active')?.textContent === 'Properties') renderTab('properties');
+  });
+  canvas.on('object:modified', () => { saveUndo(); autoSave(); updateStatus(); });
+  canvas.on('object:added', () => updateStatus());
+  canvas.on('object:removed', () => updateStatus());
+
+  canvas.on('object:moving', e => {
+    if(!snapOn) return;
+    const obj = e.target;
+    const g = gridSize || 40;
+    obj.set({ left: Math.round(obj.left / g) * g, top: Math.round(obj.top / g) * g });
+  });
+
+  // Pan with middle mouse or alt+drag
+  let isPanning = false, lastPanX, lastPanY;
+  canvas.on('mouse:down', e => {
+    if(e.e.altKey || e.e.button === 1){
+      isPanning = true;
+      lastPanX = e.e.clientX;
+      lastPanY = e.e.clientY;
+      canvas.selection = false;
+    }
+  });
+  canvas.on('mouse:move', e => {
+    if(!isPanning) return;
+    const vpt = canvas.viewportTransform;
+    vpt[4] += e.e.clientX - lastPanX;
+    vpt[5] += e.e.clientY - lastPanY;
+    lastPanX = e.e.clientX;
+    lastPanY = e.e.clientY;
+    canvas.requestRenderAll();
+  });
+  canvas.on('mouse:up', () => { isPanning = false; canvas.selection = true; });
+
+  // Zoom with scroll
+  canvas.on('mouse:wheel', e => {
+    const delta = e.e.deltaY;
+    let zoom = canvas.getZoom() * (delta > 0 ? 0.95 : 1.05);
+    zoom = Math.max(0.1, Math.min(5, zoom));
+    canvas.zoomToPoint({ x: e.e.offsetX, y: e.e.offsetY }, zoom);
+    document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
+    e.e.preventDefault();
+    e.e.stopPropagation();
+    drawGrid();
+  });
+
+  // Delete key
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Delete' || e.key === 'Backspace'){
+      if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+      deleteSelected();
+    }
+    if((e.ctrlKey || e.metaKey) && e.key === 'z'){ e.preventDefault(); undoAction(); }
+    if((e.ctrlKey || e.metaKey) && e.key === 'y'){ e.preventDefault(); redoAction(); }
+    if((e.ctrlKey || e.metaKey) && e.key === 'd'){ e.preventDefault(); duplicateSelected(); }
+  });
+}
+
+function resizeCanvas(){
+  const wrap = document.getElementById('canvasWrap');
+  canvas.setDimensions({ width: wrap.clientWidth, height: wrap.clientHeight });
+  drawGrid();
+}
+
+/* ── Grid ──────────────────────────────────────── */
+function drawGrid(){
+  canvas.getObjects('line').filter(o => o._isGrid).forEach(o => canvas.remove(o));
+  if(!gridSize) return;
+  const zoom = canvas.getZoom();
+  const vpt = canvas.viewportTransform;
+  const w = canvas.width / zoom;
+  const h = canvas.height / zoom;
+  const offX = -vpt[4] / zoom;
+  const offY = -vpt[5] / zoom;
+  const startX = Math.floor(offX / gridSize) * gridSize;
+  const startY = Math.floor(offY / gridSize) * gridSize;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const lineColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+
+  for(let x = startX; x < offX + w + gridSize; x += gridSize){
+    const line = new fabric.Line([x, offY - gridSize, x, offY + h + gridSize], {
+      stroke: lineColor, strokeWidth: 1 / zoom, selectable: false, evented: false, _isGrid: true
+    });
+    canvas.add(line);
+    canvas.sendToBack(line);
+  }
+  for(let y = startY; y < offY + h + gridSize; y += gridSize){
+    const line = new fabric.Line([offX - gridSize, y, offX + w + gridSize, y], {
+      stroke: lineColor, strokeWidth: 1 / zoom, selectable: false, evented: false, _isGrid: true
+    });
+    canvas.add(line);
+    canvas.sendToBack(line);
+  }
+}
+
+function setGrid(val){
+  gridSize = parseInt(val);
+  drawGrid();
+}
+
+function toggleSnap(){
+  snapOn = !snapOn;
+  document.getElementById('snapBtn').textContent = 'Snap: ' + (snapOn ? 'On' : 'Off');
+  document.getElementById('snapBtn').classList.toggle('active', snapOn);
+}
+
+/* ── Zoom ──────────────────────────────────────── */
+function zoomCanvas(delta){
+  let zoom = canvas.getZoom() + delta;
+  zoom = Math.max(0.1, Math.min(5, zoom));
+  canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
+  document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
+  drawGrid();
+}
+function resetZoom(){
+  canvas.setViewportTransform([1,0,0,1,0,0]);
+  document.getElementById('zoomDisplay').textContent = '100%';
+  drawGrid();
+}
+
+/* ── Add elements ──────────────────────────────── */
+function addElement(item){
+  saveUndo();
+  const center = canvas.getCenter();
+  const vpt = canvas.viewportTransform;
+  const zoom = canvas.getZoom();
+  const cx = (center.left - vpt[4]) / zoom;
+  const cy = (center.top - vpt[5]) / zoom;
+
+  let obj;
+  const base = {
+    left: cx - item.w / 2,
+    top: cy - item.h / 2,
+    fill: item.color,
+    stroke: 'rgba(0,0,0,0.15)',
+    strokeWidth: 1,
+    cornerColor: '#7da24b',
+    cornerStrokeColor: '#fff',
+    cornerSize: 10,
+    transparentCorners: false,
+    _plantName: item.name,
+    _plantIcon: item.icon,
+    _plantType: item.section || '',
+  };
+
+  if(item.shape === 'circle'){
+    obj = new fabric.Circle({ ...base, radius: item.w / 2, originX:'center', originY:'center', left:cx, top:cy });
+  } else if(item.shape === 'ellipse'){
+    obj = new fabric.Ellipse({ ...base, rx: item.w / 2, ry: item.h / 2, originX:'center', originY:'center', left:cx, top:cy });
+  } else {
+    obj = new fabric.Rect({ ...base, width: item.w, height: item.h, rx: 4, ry: 4 });
+  }
+
+  // Add label
+  const label = new fabric.Text(item.icon + ' ' + item.name, {
+    fontSize: 11,
+    fill: '#fff',
+    fontFamily: '-apple-system, sans-serif',
+    fontWeight: '600',
+    textAlign: 'center',
+    originX: 'center',
+    originY: 'center',
+    shadow: '0 1px 2px rgba(0,0,0,0.5)',
+  });
+
+  const group = new fabric.Group([obj, label], {
+    left: base.left || cx - item.w / 2,
+    top: base.top || cy - item.h / 2,
+    cornerColor: '#7da24b',
+    cornerStrokeColor: '#fff',
+    cornerSize: 10,
+    transparentCorners: false,
+    _plantName: item.name,
+    _plantIcon: item.icon,
+    _plantType: item.section || '',
+    _itemData: item,
+  });
+
+  canvas.add(group);
+  canvas.setActiveObject(group);
+  autoSave();
+  updateStatus();
+}
+
+/* ── Selection ─────────────────────────────────── */
+function updateSelection(){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  const name = obj._plantName || 'Object';
+  document.getElementById('statusSelected').textContent = name;
+  if(document.querySelector('.sidebar-tab.active')?.textContent === 'Properties') renderTab('properties');
+}
+
+function deleteSelected(){
+  const objs = canvas.getActiveObjects();
+  if(!objs.length) return;
+  saveUndo();
+  objs.forEach(o => canvas.remove(o));
+  canvas.discardActiveObject();
+  autoSave();
+}
+
+function duplicateSelected(){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  saveUndo();
+  obj.clone(cloned => {
+    cloned.set({ left: cloned.left + 20, top: cloned.top + 20 });
+    if(obj._plantName) cloned._plantName = obj._plantName;
+    if(obj._plantIcon) cloned._plantIcon = obj._plantIcon;
+    if(obj._plantType) cloned._plantType = obj._plantType;
+    if(obj._itemData) cloned._itemData = obj._itemData;
+    canvas.add(cloned);
+    canvas.setActiveObject(cloned);
+    autoSave();
+  });
+}
+
+/* ── Undo / Redo ───────────────────────────────── */
+function saveUndo(){
+  const json = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
+  json.objects = json.objects.filter(o => !o._isGrid);
+  undoStack.push(JSON.stringify(json));
+  if(undoStack.length > maxUndo) undoStack.shift();
+  redoStack = [];
+}
+
+function undoAction(){
+  if(!undoStack.length) return;
+  const current = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
+  current.objects = current.objects.filter(o => !o._isGrid);
+  redoStack.push(JSON.stringify(current));
+  const prev = JSON.parse(undoStack.pop());
+  canvas.loadFromJSON(prev, () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
+}
+
+function redoAction(){
+  if(!redoStack.length) return;
+  const current = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
+  current.objects = current.objects.filter(o => !o._isGrid);
+  undoStack.push(JSON.stringify(current));
+  const next = JSON.parse(redoStack.pop());
+  canvas.loadFromJSON(next, () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
+}
+
+/* ── Background image ──────────────────────────── */
+function uploadBackground(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      fabric.Image.fromURL(ev.target.result, img => {
+        const scale = Math.min(canvas.width / img.width, canvas.height / img.height, 1);
+        img.scale(scale);
+        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+          originX: 'left', originY: 'top'
+        });
+        saveUndo();
+        autoSave();
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+function clearBackground(){
+  canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
+  saveUndo();
+  autoSave();
+}
+
+/* ── Save / Load ───────────────────────────────── */
+function autoSave(){
+  if(!currentDesignId) return;
+  const json = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
+  json.objects = json.objects.filter(o => !o._isGrid);
+  designs[currentDesignId] = {
+    name: designs[currentDesignId]?.name || 'Untitled',
+    data: json,
+    updated: new Date().toISOString(),
+  };
+  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
+}
+
+function autoLoad(){
+  const keys = Object.keys(designs);
+  if(keys.length){
+    currentDesignId = keys[keys.length - 1];
+    loadDesign(currentDesignId);
+  } else {
+    newDesign();
+  }
+}
+
+function newDesign(){
+  const id = 'design_' + Date.now();
+  designs[id] = { name: 'Untitled Garden', data: null, updated: new Date().toISOString() };
+  currentDesignId = id;
+  canvas.clear();
+  drawGrid();
+  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
+  updateStatus();
+}
+
+function loadDesign(id){
+  currentDesignId = id;
+  const d = designs[id];
+  if(d && d.data){
+    canvas.loadFromJSON(d.data, () => { drawGrid(); canvas.requestRenderAll(); updateStatus(); });
+  } else {
+    canvas.clear();
+    drawGrid();
+    updateStatus();
+  }
+}
+
+function deleteDesign(id){
+  if(!confirm('Delete "' + (designs[id]?.name || 'Untitled') + '"?')) return;
+  delete designs[id];
+  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
+  if(currentDesignId === id){
+    const keys = Object.keys(designs);
+    if(keys.length) loadDesign(keys[keys.length - 1]);
+    else newDesign();
+  }
+  renderTab('designs');
+}
+
+function renameDesign(id, name){
+  if(designs[id]){ designs[id].name = name; localStorage.setItem('nb_garden_designs', JSON.stringify(designs)); }
+}
+
+/* ── Sidebar tabs ──────────────────────────────── */
+function switchTab(tab, btn){
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderTab(tab);
+}
+
+function renderTab(tab){
+  const el = document.getElementById('sidebarContent');
+  if(tab === 'library') renderLibrary(el);
+  else if(tab === 'properties') renderProperties(el);
+  else if(tab === 'designs') renderDesigns(el);
+}
+
+function renderLibrary(el){
+  let html = '';
+  // Background upload
+  html += `<div class="lib-section">
+    <div class="lib-section-title">Background</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn-sm btn-primary" onclick="uploadBackground()" style="flex:1">Upload Site Photo</button>
+      <button class="btn-sm prop-btn" onclick="clearBackground()">Clear</button>
+    </div>
+  </div>`;
+  LIBRARY.forEach(sec => {
+    html += `<div class="lib-section"><div class="lib-section-title">${sec.section}</div><div class="lib-grid">`;
+    sec.items.forEach((item, i) => {
+      html += `<div class="lib-item" onclick='addElement(${JSON.stringify({...item, section:sec.section})})'>
+        <span class="lib-icon">${item.icon}</span>${item.name}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  el.innerHTML = html;
+}
+
+function renderProperties(el){
+  const obj = canvas.getActiveObject();
+  if(!obj){
+    el.innerHTML = '<div class="empty-state">Select an element to edit its properties</div>';
+    return;
+  }
+  const name = obj._plantName || 'Object';
+  const icon = obj._plantIcon || '';
+  el.innerHTML = `
+    <div class="prop-group">
+      <div class="prop-label">Element</div>
+      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${icon} ${name}</div>
+    </div>
+    <div class="prop-group">
+      <div class="prop-label">Position</div>
+      <div class="prop-row">
+        <span class="prop-unit">X</span>
+        <input class="prop-input" type="number" value="${Math.round(obj.left)}" onchange="setProp('left',+this.value)">
+        <span class="prop-unit">Y</span>
+        <input class="prop-input" type="number" value="${Math.round(obj.top)}" onchange="setProp('top',+this.value)">
+      </div>
+    </div>
+    <div class="prop-group">
+      <div class="prop-label">Size</div>
+      <div class="prop-row">
+        <span class="prop-unit">W</span>
+        <input class="prop-input" type="number" value="${Math.round(obj.width * obj.scaleX)}" onchange="setSize('w',+this.value)">
+        <span class="prop-unit">H</span>
+        <input class="prop-input" type="number" value="${Math.round(obj.height * obj.scaleY)}" onchange="setSize('h',+this.value)">
+      </div>
+      <div class="prop-row">
+        <span class="prop-unit">↻</span>
+        <input class="prop-input" type="number" value="${Math.round(obj.angle)}" onchange="setProp('angle',+this.value)" step="15">
+        <span class="prop-unit">deg</span>
+      </div>
+    </div>
+    <div class="prop-group">
+      <div class="prop-label">Appearance</div>
+      <div class="prop-row">
+        <span class="prop-unit" style="width:auto">Opacity</span>
+        <input class="prop-input" type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="setProp('opacity',+this.value)">
+      </div>
+    </div>
+    <div class="prop-group">
+      <div class="prop-label">Actions</div>
+      <div class="prop-row">
+        <button class="prop-btn" onclick="duplicateSelected()">Duplicate</button>
+        <button class="prop-btn" onclick="bringForward()">↑ Forward</button>
+        <button class="prop-btn" onclick="sendBackward()">↓ Back</button>
+        <button class="prop-btn danger" onclick="deleteSelected()">Delete</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderDesigns(el){
+  const keys = Object.keys(designs).reverse();
+  let html = `<button class="btn-sm btn-primary" onclick="newDesign();renderTab('designs')" style="width:100%;margin-bottom:10px;">+ New Design</button>`;
+  if(!keys.length){
+    html += '<div class="empty-state">No saved designs</div>';
+  }
+  keys.forEach(id => {
+    const d = designs[id];
+    const active = id === currentDesignId;
+    const date = d.updated ? new Date(d.updated).toLocaleDateString() : '';
+    html += `<div class="design-item${active?' active':''}" onclick="loadDesign('${id}');renderTab('designs')">
+      <div class="design-name" contenteditable="true" onblur="renameDesign('${id}',this.textContent)">${d.name || 'Untitled'}</div>
+      <span class="design-date">${date}</span>
+      <button class="design-del" onclick="event.stopPropagation();deleteDesign('${id}')">×</button>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ── Property setters ──────────────────────────── */
+function setProp(prop, val){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  saveUndo();
+  obj.set(prop, val);
+  obj.setCoords();
+  canvas.requestRenderAll();
+  autoSave();
+}
+function setSize(dim, val){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  saveUndo();
+  if(dim === 'w') obj.set('scaleX', val / obj.width);
+  else obj.set('scaleY', val / obj.height);
+  obj.setCoords();
+  canvas.requestRenderAll();
+  autoSave();
+}
+function bringForward(){ const o=canvas.getActiveObject(); if(o){canvas.bringForward(o);autoSave();} }
+function sendBackward(){ const o=canvas.getActiveObject(); if(o){canvas.sendBackwards(o);autoSave();} }
+
+/* ── Status ────────────────────────────────────── */
+function updateStatus(){
+  const count = canvas.getObjects().filter(o => !o._isGrid).length;
+  document.getElementById('statusObjects').textContent = count + ' object' + (count===1?'':'s');
+}
+
+/* ── Theme ─────────────────────────────────────── */
+function toggleTheme(){
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  localStorage.setItem('nb_garden_theme', isDark ? 'light' : 'dark');
+  drawGrid();
+}
+(function(){
+  const saved = localStorage.getItem('nb_garden_theme');
+  if(saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ── Mobile sidebar ────────────────────────────── */
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarBackdrop').classList.toggle('open');
+}
+</script>
+</body>
+</html>
