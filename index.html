@@ -145,6 +145,30 @@ html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
   .toolbar{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 }
 .empty-state{text-align:center;padding:24px 16px;color:var(--text2);font-size:12px;line-height:1.5;}
+
+/* ─ Tooltip preview ─ */
+.plant-tip{position:fixed;z-index:150;background:var(--surf);border:1px solid var(--brd);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,0.15);padding:14px;width:220px;pointer-events:none;opacity:0;transition:opacity .15s;}
+.plant-tip.show{opacity:1;}
+.plant-tip-name{font-size:14px;font-weight:800;margin-bottom:6px;}
+.plant-tip-row{display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--brd);}
+.plant-tip-row:last-child{border:none;}
+.plant-tip-preview{width:48px;height:48px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;}
+
+/* ─ Alignment guides ─ */
+.align-guide{position:absolute;z-index:12;pointer-events:none;}
+.align-guide-h{height:1px;left:0;right:0;border-top:1px dashed #e05a9a;}
+.align-guide-v{width:1px;top:0;bottom:0;border-left:1px dashed #e05a9a;}
+
+/* ─ Templates modal ─ */
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;}
+.tpl-card{border:1px solid var(--brd);border-radius:10px;padding:12px;cursor:pointer;background:var(--bg);text-align:center;transition:border-color .12s,transform .1s;}
+.tpl-card:hover{border-color:var(--asp);transform:translateY(-2px);}
+.tpl-card-icon{font-size:28px;margin-bottom:4px;}
+.tpl-card-name{font-size:12px;font-weight:700;}
+.tpl-card-desc{font-size:10px;color:var(--text2);margin-top:2px;}
+
+/* ─ Dimension labels ─ */
+.dim-label{position:absolute;background:rgba(31,61,29,0.85);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;pointer-events:none;white-space:nowrap;z-index:14;letter-spacing:.02em;}
 </style>
 </head>
 <body>
@@ -172,6 +196,8 @@ html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
   </select>
   <button class="tb-btn" onclick="toggleSnap()" id="snapBtn" class="tb-btn on">Snap</button>
   <div class="tb-spacer"></div>
+  <button class="tb-btn" onclick="toggleDimLabels()" id="dimBtn">Dims</button>
+  <button class="tb-btn" onclick="toggleSpacing()" id="spacingBtn">Spacing</button>
   <button class="tb-btn" onclick="exportPNG()">Export PNG</button>
   <button class="tb-btn" onclick="toggleTheme()">Dark</button>
 </header>
@@ -272,6 +298,24 @@ html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
   <div class="ctx-item danger" onclick="deleteSelected();hideCtx()">Delete<span class="ctx-shortcut">Del</span></div>
 </div>
 
+<!-- Tooltip preview -->
+<div class="plant-tip" id="plantTip"></div>
+
+<!-- Template modal -->
+<div class="modal-bg" id="tplModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3>Start from Template</h3>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Choose a starting layout with pre-placed house and property boundary.</p>
+    <div class="tpl-grid">
+      <div class="tpl-card" onclick="applyTemplate('front')"><div class="tpl-card-icon">🏡</div><div class="tpl-card-name">Front Yard</div><div class="tpl-card-desc">House, driveway, walkway, foundation beds</div></div>
+      <div class="tpl-card" onclick="applyTemplate('back')"><div class="tpl-card-icon">🌳</div><div class="tpl-card-name">Backyard</div><div class="tpl-card-desc">House, patio, lawn area, fence line</div></div>
+      <div class="tpl-card" onclick="applyTemplate('full')"><div class="tpl-card-icon">🏠</div><div class="tpl-card-name">Full Property</div><div class="tpl-card-desc">House, garage, full boundary, driveway</div></div>
+      <div class="tpl-card" onclick="applyTemplate('veggie')"><div class="tpl-card-icon">🥬</div><div class="tpl-card-name">Veggie Garden</div><div class="tpl-card-desc">Raised beds, paths, herb spiral layout</div></div>
+      <div class="tpl-card" onclick="applyTemplate('blank')"><div class="tpl-card-icon">📐</div><div class="tpl-card-name">Blank Canvas</div><div class="tpl-card-desc">Empty canvas with property boundary only</div></div>
+    </div>
+  </div>
+</div>
+
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <script>
@@ -287,6 +331,9 @@ let undoStack = [], redoStack = [], maxUndo = 50;
 let clipboard = null;
 let drawStart = null, drawObj = null, polyPoints = [];
 let measureStart = null, measureLine = null, measureLabels = [];
+let showDimLabels = false, showSpacingCircles = false;
+let alignGuides = [];
+let dragItem = null, dragSection = null;
 const designs = JSON.parse(localStorage.getItem('gp_designs') || '{}');
 const CUSTOM_PROPS = ['_name','_icon','_type','_layer','_data','_cost','_notes','_locked','_spread','_sun','_water'];
 
@@ -350,6 +397,30 @@ const PLANTS = [
     { name:'Fence — Metal',  spread:1, h:4,  sun:'any',   water:'none',  cost:30,  color:'#4a4a4a', z:0, unit:'lin ft',shape:'rect', w:20, ht:0.5 },
     { name:'Stepping Stones',spread:1, h:0,  sun:'any',   water:'none',  cost:5,   color:'#908880', z:0, unit:'each',  shape:'circle', w:1.5 },
     { name:'Steps / Stairs', spread:1, h:2,  sun:'any',   water:'none',  cost:40,  color:'#7a7060', z:0, unit:'each',  shape:'rect', w:5, ht:3 },
+  ]},
+  { section:'Vegetables & Herbs', items:[
+    { name:'Tomato',         spread:3,  h:5,   sun:'full',  water:'high',  cost:4,   color:'#c04030', z:0 },
+    { name:'Pepper',         spread:2,  h:3,   sun:'full',  water:'med',   cost:4,   color:'#d06020', z:0 },
+    { name:'Zucchini',       spread:4,  h:2,   sun:'full',  water:'high',  cost:3,   color:'#5a8a30', z:0 },
+    { name:'Lettuce',        spread:1,  h:1,   sun:'part',  water:'high',  cost:2,   color:'#6aba50', z:0 },
+    { name:'Cucumber',       spread:3,  h:1,   sun:'full',  water:'high',  cost:3,   color:'#4a8a2a', z:0 },
+    { name:'Basil',          spread:1,  h:2,   sun:'full',  water:'med',   cost:3,   color:'#3a7a2a', z:0 },
+    { name:'Rosemary',       spread:3,  h:3,   sun:'full',  water:'low',   cost:8,   color:'#5a7a6a', z:0 },
+    { name:'Strawberry',     spread:2,  h:1,   sun:'full',  water:'med',   cost:5,   color:'#c03040', z:0 },
+    { name:'Corn',           spread:1,  h:8,   sun:'full',  water:'med',   cost:2,   color:'#7aaa40', z:1 },
+    { name:'Carrot',         spread:0.5,h:1,   sun:'full',  water:'med',   cost:1,   color:'#d08030', z:0 },
+    { name:'Bean (pole)',    spread:1,  h:6,   sun:'full',  water:'med',   cost:2,   color:'#4a8a4a', z:1 },
+    { name:'Herb Spiral',    spread:4,  h:3,   sun:'full',  water:'med',   cost:60,  color:'#5a9050', z:0, shape:'circle', w:4 },
+  ]},
+  { section:'Pathways', layer:'hardscape', items:[
+    { name:'Paver Walkway',    spread:1, h:0,  sun:'any',   water:'none',  cost:12,  color:'#a08070', z:0, unit:'sq ft', shape:'rect', w:24, ht:3 },
+    { name:'Brick Path',       spread:1, h:0,  sun:'any',   water:'none',  cost:14,  color:'#a06050', z:0, unit:'sq ft', shape:'rect', w:20, ht:3 },
+    { name:'Gravel Walkway',   spread:1, h:0,  sun:'any',   water:'none',  cost:3,   color:'#b0a890', z:0, unit:'sq ft', shape:'rect', w:20, ht:3 },
+    { name:'Flagstone Walk',   spread:1, h:0,  sun:'any',   water:'none',  cost:10,  color:'#8a7a6a', z:0, unit:'sq ft', shape:'rect', w:20, ht:3 },
+    { name:'Concrete Sidewalk',spread:1, h:0,  sun:'any',   water:'none',  cost:7,   color:'#c0b8a8', z:0, unit:'sq ft', shape:'rect', w:30, ht:4 },
+    { name:'Mulch Path',       spread:1, h:0,  sun:'any',   water:'none',  cost:1,   color:'#6a4a2a', z:0, unit:'sq ft', shape:'rect', w:16, ht:3 },
+    { name:'Stepping Stone Run',spread:1,h:0,  sun:'any',   water:'none',  cost:6,   color:'#908880', z:0, unit:'each',  shape:'rect', w:16, ht:2 },
+    { name:'Garden Border',    spread:1, h:0.5,sun:'any',   water:'none',  cost:4,   color:'#5a4a3a', z:0, unit:'lin ft',shape:'rect', w:20, ht:0.4 },
   ]},
   { section:'Water Features', layer:'water', items:[
     { name:'Pond',          spread:8,  h:0,  sun:'part',  water:'none',  cost:1500,color:'#4a8ab0', z:0, shape:'ellipse', w:8, ht:6 },
@@ -1070,11 +1141,17 @@ function renderLibrary(el){
         <span class="chev">▾</span> ${sec.section} <span style="font-weight:400;color:var(--text2)">(${filtered.length})</span>
       </div>
       <div class="lib-grid">`;
-    filtered.forEach(item => {
+    filtered.forEach((item, idx) => {
       const sunIcon = SUN_ICONS[item.sun] || '';
       const costStr = item.unit ? '$' + item.cost + '/' + item.unit : '$' + item.cost;
       const spreadStr = item.spread > 1 ? item.spread + "'" : '';
-      html += `<div class="lib-item" onclick='addPlant(${JSON.stringify(item)}, ${JSON.stringify({layer:sec.layer})})'>
+      const dataAttr = encodeURIComponent(JSON.stringify(item));
+      const secAttr = encodeURIComponent(JSON.stringify({layer:sec.layer}));
+      html += `<div class="lib-item" draggable="true"
+        onclick='addPlantCenter(${JSON.stringify(item)}, ${JSON.stringify({layer:sec.layer})})'
+        ondragstart='onLibDragStart(event,"${dataAttr}","${secAttr}")'
+        onmouseenter='showPlantTip(event,${JSON.stringify(item)})'
+        onmouseleave='hidePlantTip()'>
         <div class="lib-icon-wrap" style="background:${item.color}20;border:2px solid ${item.color}">
           <div style="width:20px;height:20px;border-radius:50%;background:${item.color};opacity:.8"></div>
         </div>
@@ -1265,6 +1342,364 @@ function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sbBackdrop').classList.toggle('open');
 }
+
+/* ════════════════════════════════════════════════
+   FEATURE 1: Drag-to-place from sidebar
+   ════════════════════════════════════════════════ */
+function addPlantCenter(item, section){ addPlant(item, section); }
+
+function onLibDragStart(e, itemEncoded, secEncoded){
+  dragItem = JSON.parse(decodeURIComponent(itemEncoded));
+  dragSection = JSON.parse(decodeURIComponent(secEncoded));
+  e.dataTransfer.setData('text/plain', 'plant');
+  e.dataTransfer.effectAllowed = 'copy';
+}
+
+(function setupDrop(){
+  const wrap = document.getElementById('canvasWrap');
+  if(wrap){
+    wrap.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
+    wrap.addEventListener('drop', e => {
+      e.preventDefault();
+      if(!dragItem) return;
+      const rect = wrap.getBoundingClientRect();
+      const vpt = canvas.viewportTransform, z = canvas.getZoom();
+      const cx = (e.clientX - rect.left - vpt[4]) / z;
+      const cy = (e.clientY - rect.top - vpt[5]) / z;
+      addPlantAt(dragItem, dragSection, cx, cy);
+      dragItem = null; dragSection = null;
+    });
+  }
+})();
+
+function addPlantAt(item, section, cx, cy){
+  saveUndo();
+  const layer = section?.layer || (item.shape ? 'hardscape' : 'planting');
+  const isTree = !item.shape;
+  let obj;
+
+  if(isTree){
+    const spreadPx = ftToPx(item.spread || 4);
+    const r = spreadPx / 2;
+    const canopy = new fabric.Circle({ radius: r, fill: item.color, opacity: 0.7, stroke: darken(item.color, 30), strokeWidth: 1.5, originX:'center', originY:'center' });
+    const inner = new fabric.Circle({ radius: r * 0.6, fill: lighten(item.color, 15), opacity: 0.5, originX:'center', originY:'center' });
+    const trunk = new fabric.Circle({ radius: Math.max(2, r * 0.08), fill: '#5a4030', stroke:'#3a2a1a', strokeWidth: 1, originX:'center', originY:'center' });
+    const label = new fabric.Text(item.name, { fontSize: Math.max(8, Math.min(11, r * 0.3)), fill: '#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', textAlign:'center', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.6)' });
+    obj = new fabric.Group([canopy, inner, trunk, label], { left: cx, top: cy, originX:'center', originY:'center' });
+  } else {
+    const w = ftToPx(item.w || 10), h = ftToPx(item.ht || item.w || 6);
+    let shape;
+    if(item.shape === 'circle') shape = new fabric.Circle({ radius: w/2, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, originX:'center', originY:'center' });
+    else if(item.shape === 'ellipse') shape = new fabric.Ellipse({ rx: w/2, ry: h/2, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, originX:'center', originY:'center' });
+    else shape = new fabric.Rect({ width: w, height: h, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, rx:2, ry:2 });
+    const label = new fabric.Text(item.name, { fontSize: Math.max(8, Math.min(11, Math.min(w, h) * 0.2)), fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', textAlign:'center', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.5)' });
+    obj = new fabric.Group([shape, label], { left: cx, top: cy, originX:'center', originY:'center' });
+  }
+
+  obj.set({ cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false, _name: item.name, _layer: layer, _type: isTree ? 'plant' : 'hardscape', _data: item, _cost: item.cost || 0, _spread: item.spread, _sun: item.sun, _water: item.water });
+  canvas.add(obj);
+  canvas.setActiveObject(obj);
+  autoSave(); updateStatus();
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 2: Tooltip preview on hover
+   ════════════════════════════════════════════════ */
+let tipTimer = null;
+function showPlantTip(e, item){
+  clearTimeout(tipTimer);
+  tipTimer = setTimeout(() => {
+    const tip = document.getElementById('plantTip');
+    const sunLabel = SUN_LABELS[item.sun] || 'Any';
+    const waterLabel = WATER_LABELS[item.water] || 'None';
+    const costStr = item.unit ? '$' + item.cost + '/' + item.unit : '$' + item.cost;
+    tip.innerHTML = `
+      <div class="plant-tip-preview" style="background:${item.color}30;border:3px solid ${item.color}">
+        <div style="width:28px;height:28px;border-radius:50%;background:${item.color};opacity:.8"></div>
+      </div>
+      <div class="plant-tip-name">${item.name}</div>
+      <div class="plant-tip-row"><span>Sun</span><span>${SUN_ICONS[item.sun]||''} ${sunLabel}</span></div>
+      <div class="plant-tip-row"><span>Water</span><span>💧 ${waterLabel}</span></div>
+      ${item.spread > 1 ? `<div class="plant-tip-row"><span>Mature Spread</span><span>${item.spread}' wide</span></div>` : ''}
+      ${item.h ? `<div class="plant-tip-row"><span>Mature Height</span><span>${item.h}' tall</span></div>` : ''}
+      <div class="plant-tip-row"><span>Est. Cost</span><span style="font-weight:700;color:var(--asp)">${costStr}</span></div>
+    `;
+    const rect = e.target.closest('.lib-item').getBoundingClientRect();
+    tip.style.left = (rect.right + 8) + 'px';
+    tip.style.top = rect.top + 'px';
+    if(rect.right + 230 > window.innerWidth) tip.style.left = (rect.left - 228) + 'px';
+    tip.classList.add('show');
+  }, 300);
+}
+function hidePlantTip(){
+  clearTimeout(tipTimer);
+  document.getElementById('plantTip').classList.remove('show');
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 3: Smart alignment guides
+   ════════════════════════════════════════════════ */
+const ALIGN_THRESHOLD = 6;
+
+function clearAlignGuides(){
+  alignGuides.forEach(g => { if(g.parentNode) g.parentNode.removeChild(g); });
+  alignGuides = [];
+}
+
+(function setupAlignGuides(){
+  setTimeout(() => {
+    if(!canvas) return;
+    canvas.off('object:moving', onObjMoving);
+    canvas.on('object:moving', e => {
+      if(snapOn){
+        const obj = e.target, g = gridPx || 24;
+        obj.set({ left: Math.round(obj.left / g) * g, top: Math.round(obj.top / g) * g });
+      }
+      showAlignGuides(e.target);
+    });
+    canvas.on('object:modified', () => { clearAlignGuides(); });
+    canvas.on('mouse:up', () => { clearAlignGuides(); });
+  }, 500);
+})();
+
+function showAlignGuides(moving){
+  clearAlignGuides();
+  const wrap = document.getElementById('canvasWrap');
+  const z = canvas.getZoom(), vpt = canvas.viewportTransform;
+  const mb = moving.getBoundingRect(true);
+  const mCx = mb.left + mb.width / 2, mCy = mb.top + mb.height / 2;
+  const edges = { l: mb.left, r: mb.left + mb.width, t: mb.top, b: mb.top + mb.height, cx: mCx, cy: mCy };
+
+  canvas.getObjects().forEach(o => {
+    if(o === moving || o._isGrid || o._isMeasure || o._isSpacing) return;
+    const ob = o.getBoundingRect(true);
+    const oCx = ob.left + ob.width / 2, oCy = ob.top + ob.height / 2;
+    const oEdges = { l: ob.left, r: ob.left + ob.width, t: ob.top, b: ob.top + ob.height, cx: oCx, cy: oCy };
+
+    // Horizontal guides (matching Y coords)
+    [['t','t'],['b','b'],['cy','cy'],['t','b'],['b','t']].forEach(([mk,ok]) => {
+      if(Math.abs(edges[mk] - oEdges[ok]) < ALIGN_THRESHOLD){
+        const screenY = edges[mk] * z + vpt[5];
+        const guide = document.createElement('div');
+        guide.className = 'align-guide align-guide-h';
+        guide.style.top = screenY + 'px';
+        wrap.appendChild(guide);
+        alignGuides.push(guide);
+      }
+    });
+    // Vertical guides (matching X coords)
+    [['l','l'],['r','r'],['cx','cx'],['l','r'],['r','l']].forEach(([mk,ok]) => {
+      if(Math.abs(edges[mk] - oEdges[ok]) < ALIGN_THRESHOLD){
+        const screenX = edges[mk] * z + vpt[4];
+        const guide = document.createElement('div');
+        guide.className = 'align-guide align-guide-v';
+        guide.style.left = screenX + 'px';
+        wrap.appendChild(guide);
+        alignGuides.push(guide);
+      }
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 4: Dimension labels on objects
+   ════════════════════════════════════════════════ */
+let dimLabelEls = [];
+
+function toggleDimLabels(){
+  showDimLabels = !showDimLabels;
+  document.getElementById('dimBtn').classList.toggle('on', showDimLabels);
+  renderDimLabels();
+}
+
+function renderDimLabels(){
+  dimLabelEls.forEach(el => { if(el.parentNode) el.parentNode.removeChild(el); });
+  dimLabelEls = [];
+  if(!showDimLabels) return;
+
+  const wrap = document.getElementById('canvasWrap');
+  const z = canvas.getZoom(), vpt = canvas.viewportTransform;
+
+  canvas.getObjects().forEach(o => {
+    if(o._isGrid || o._isMeasure || o._isSpacing) return;
+    const br = o.getBoundingRect(true);
+    const w = o.width * (o.scaleX || 1);
+    const h = o.height * (o.scaleY || 1);
+    const wStr = toDisplay(w);
+    const hStr = toDisplay(h);
+
+    const label = document.createElement('div');
+    label.className = 'dim-label';
+    label.textContent = wStr + ' × ' + hStr;
+    label.style.left = (br.left * z + vpt[4] + br.width * z / 2) + 'px';
+    label.style.top = (br.top * z + vpt[5] + br.height * z + 4) + 'px';
+    label.style.transform = 'translateX(-50%)';
+    wrap.appendChild(label);
+    dimLabelEls.push(label);
+  });
+}
+
+// Re-render dim labels on canvas changes
+(function(){
+  setTimeout(() => {
+    if(!canvas) return;
+    ['object:modified','object:added','object:removed','object:moving','mouse:wheel'].forEach(evt => {
+      canvas.on(evt, () => { if(showDimLabels) requestAnimationFrame(renderDimLabels); });
+    });
+  }, 500);
+})();
+
+/* ════════════════════════════════════════════════
+   FEATURE 5: Quick-start templates
+   ════════════════════════════════════════════════ */
+function showTemplates(){ document.getElementById('tplModal').style.display = 'flex'; }
+
+// Show templates when creating a new blank design
+const _origNewDesign = newDesign;
+newDesign = function(){
+  _origNewDesign();
+  showTemplates();
+};
+
+function applyTemplate(type){
+  document.getElementById('tplModal').style.display = 'none';
+  saveUndo();
+  canvas.clear();
+
+  const P = PPF; // 12px per foot
+
+  if(type === 'blank'){
+    // Just property boundary
+    const boundary = new fabric.Rect({ left: 2*P, top: 2*P, width: 80*P, height: 60*P, fill:'transparent', stroke:'#775d2f', strokeWidth:2, strokeDashArray:[8,4], rx:0, ry:0, _name:'Property Boundary', _layer:'boundary', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false });
+    canvas.add(boundary);
+  }
+
+  if(type === 'front'){
+    canvas.add(new fabric.Rect({ left: 2*P, top: 2*P, width: 80*P, height: 50*P, fill:'transparent', stroke:'#775d2f', strokeWidth:2, strokeDashArray:[8,4], _name:'Property Line', _layer:'boundary', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // House
+    const house = new fabric.Rect({ left: 15*P, top: 30*P, width: 50*P, height: 20*P, fill:'#8a7a6a', opacity:.8, stroke:'#5a4a3a', strokeWidth:2, rx:2, ry:2 });
+    const hLabel = new fabric.Text('House', { fontSize:14, fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.5)' });
+    const hGroup = new fabric.Group([house, hLabel], { left:15*P, top:30*P, _name:'House', _layer:'structures', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false });
+    canvas.add(hGroup);
+    // Driveway
+    canvas.add(new fabric.Rect({ left: 55*P, top: 2*P, width: 12*P, height: 28*P, fill:'#b0a890', opacity:.8, stroke:'#8a7a6a', strokeWidth:1.5, rx:2, ry:2, _name:'Driveway', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Walkway
+    canvas.add(new fabric.Rect({ left: 38*P, top: 2*P, width: 3*P, height: 28*P, fill:'#908070', opacity:.8, stroke:'#6a5a4a', strokeWidth:1, rx:1, ry:1, _name:'Front Walkway', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Foundation beds
+    canvas.add(new fabric.Rect({ left: 15*P, top: 27*P, width: 50*P, height: 3*P, fill:'#6a4a2a', opacity:.6, stroke:'#4a3a1a', strokeWidth:1, rx:1, ry:1, _name:'Foundation Bed', _layer:'planting', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    designs[currentDesignId].name = 'Front Yard Design';
+  }
+
+  if(type === 'back'){
+    canvas.add(new fabric.Rect({ left: 2*P, top: 2*P, width: 80*P, height: 60*P, fill:'transparent', stroke:'#775d2f', strokeWidth:2, strokeDashArray:[8,4], _name:'Property Line', _layer:'boundary', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // House at top
+    const house = new fabric.Rect({ left: 15*P, top: 2*P, width: 50*P, height: 18*P, fill:'#8a7a6a', opacity:.8, stroke:'#5a4a3a', strokeWidth:2, rx:2, ry:2 });
+    const hLabel = new fabric.Text('House', { fontSize:14, fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.5)' });
+    canvas.add(new fabric.Group([house, hLabel], { left:15*P, top:2*P, _name:'House', _layer:'structures', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Patio
+    canvas.add(new fabric.Rect({ left: 25*P, top: 20*P, width: 16*P, height: 12*P, fill:'#b0a890', opacity:.8, stroke:'#8a7a6a', strokeWidth:1.5, rx:2, ry:2, _name:'Patio', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Fence
+    canvas.add(new fabric.Rect({ left: 2*P, top: 60*P, width: 80*P, height: 0.5*P, fill:'#8a6a40', stroke:'#5a4a2a', strokeWidth:1, _name:'Back Fence', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    canvas.add(new fabric.Rect({ left: 2*P, top: 20*P, width: 0.5*P, height: 40*P, fill:'#8a6a40', stroke:'#5a4a2a', strokeWidth:1, _name:'Left Fence', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    canvas.add(new fabric.Rect({ left: 81.5*P, top: 20*P, width: 0.5*P, height: 40*P, fill:'#8a6a40', stroke:'#5a4a2a', strokeWidth:1, _name:'Right Fence', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    designs[currentDesignId].name = 'Backyard Design';
+  }
+
+  if(type === 'full'){
+    canvas.add(new fabric.Rect({ left: 2*P, top: 2*P, width: 100*P, height: 80*P, fill:'transparent', stroke:'#775d2f', strokeWidth:2, strokeDashArray:[8,4], _name:'Property Line', _layer:'boundary', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // House
+    const house = new fabric.Rect({ left: 20*P, top: 25*P, width: 50*P, height: 30*P, fill:'#8a7a6a', opacity:.8, stroke:'#5a4a3a', strokeWidth:2, rx:2, ry:2 });
+    const hLabel = new fabric.Text('House', { fontSize:16, fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.5)' });
+    canvas.add(new fabric.Group([house, hLabel], { left:20*P, top:25*P, _name:'House', _layer:'structures', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Garage
+    const gar = new fabric.Rect({ left: 72*P, top: 30*P, width: 20*P, height: 20*P, fill:'#7a6a5a', opacity:.8, stroke:'#4a3a2a', strokeWidth:2, rx:2, ry:2 });
+    const gLabel = new fabric.Text('Garage', { fontSize:11, fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.5)' });
+    canvas.add(new fabric.Group([gar, gLabel], { left:72*P, top:30*P, _name:'Garage', _layer:'structures', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Driveway
+    canvas.add(new fabric.Rect({ left: 75*P, top: 2*P, width: 14*P, height: 28*P, fill:'#b0a890', opacity:.8, stroke:'#8a7a6a', strokeWidth:1.5, rx:2, ry:2, _name:'Driveway', _layer:'hardscape', _type:'hardscape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    designs[currentDesignId].name = 'Full Property Design';
+  }
+
+  if(type === 'veggie'){
+    // Garden boundary
+    canvas.add(new fabric.Rect({ left: 2*P, top: 2*P, width: 40*P, height: 30*P, fill:'transparent', stroke:'#775d2f', strokeWidth:2, strokeDashArray:[8,4], _name:'Garden Boundary', _layer:'boundary', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // 4 raised beds
+    [0,1,2,3].forEach(i => {
+      canvas.add(new fabric.Rect({ left: (4 + i*9)*P, top: 4*P, width: 8*P, height: 20*P, fill:'#6a5030', opacity:.7, stroke:'#4a3a1a', strokeWidth:2, rx:2, ry:2, _name:'Raised Bed '+(i+1), _layer:'planting', _type:'hardscape', _cost:80, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    });
+    // Center walkway between beds
+    canvas.add(new fabric.Rect({ left: 12.5*P, top: 4*P, width: 1*P, height: 20*P, fill:'#a09a80', opacity:.7, stroke:'#8a7a6a', strokeWidth:1, _name:'Gravel Path', _layer:'hardscape', _type:'hardscape', _cost:3, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    canvas.add(new fabric.Rect({ left: 21.5*P, top: 4*P, width: 1*P, height: 20*P, fill:'#a09a80', opacity:.7, stroke:'#8a7a6a', strokeWidth:1, _name:'Gravel Path', _layer:'hardscape', _type:'hardscape', _cost:3, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    canvas.add(new fabric.Rect({ left: 30.5*P, top: 4*P, width: 1*P, height: 20*P, fill:'#a09a80', opacity:.7, stroke:'#8a7a6a', strokeWidth:1, _name:'Gravel Path', _layer:'hardscape', _type:'hardscape', _cost:3, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Main path at bottom
+    canvas.add(new fabric.Rect({ left: 4*P, top: 25*P, width: 35*P, height: 2*P, fill:'#a09a80', opacity:.8, stroke:'#8a7a6a', strokeWidth:1, _name:'Main Path', _layer:'hardscape', _type:'hardscape', _cost:3, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Herb spiral bottom-right
+    const spiral = new fabric.Circle({ radius: 2*P, fill:'#5a9050', opacity:.7, stroke:'#3a6030', strokeWidth:2, originX:'center', originY:'center' });
+    const sLabel = new fabric.Text('Herb Spiral', { fontSize:9, fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700', originX:'center', originY:'center', shadow:'0 1px 2px rgba(0,0,0,0.6)' });
+    canvas.add(new fabric.Group([spiral, sLabel], { left: 36*P, top: 28*P, originX:'center', originY:'center', _name:'Herb Spiral', _layer:'planting', _type:'plant', _cost:60, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    // Compost bin
+    canvas.add(new fabric.Rect({ left: 2*P, top: 27*P, width: 3*P, height: 3*P, fill:'#5a4020', opacity:.7, stroke:'#3a2a10', strokeWidth:1.5, rx:2, ry:2, _name:'Compost Bin', _layer:'structures', _type:'hardscape', _cost:50, cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }));
+    designs[currentDesignId].name = 'Vegetable Garden';
+  }
+
+  drawGrid();
+  autoSave();
+  updateStatus();
+  renderTab(activeTab());
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 6: Spacing circle toggle
+   ════════════════════════════════════════════════ */
+function toggleSpacing(){
+  showSpacingCircles = !showSpacingCircles;
+  document.getElementById('spacingBtn').classList.toggle('on', showSpacingCircles);
+  renderSpacingCircles();
+}
+
+function renderSpacingCircles(){
+  canvas.getObjects().filter(o => o._isSpacing).forEach(o => canvas.remove(o));
+  if(!showSpacingCircles) { canvas.requestRenderAll(); return; }
+
+  canvas.getObjects().forEach(o => {
+    if(o._isGrid || o._isMeasure || o._isSpacing) return;
+    const spread = o._spread;
+    if(!spread || spread <= 1) return;
+    const spacingPx = ftToPx(spread);
+    const br = o.getBoundingRect(false);
+    const cx = o.left + (o.originX === 'center' ? 0 : (o.width * (o.scaleX||1)) / 2);
+    const cy = o.top + (o.originY === 'center' ? 0 : (o.height * (o.scaleY||1)) / 2);
+
+    const ring = new fabric.Circle({
+      left: cx, top: cy, radius: spacingPx / 2,
+      originX:'center', originY:'center',
+      fill: 'transparent', stroke: '#e05a9a', strokeWidth: 1.5,
+      strokeDashArray: [6, 4], opacity: 0.6,
+      selectable: false, evented: false, _isSpacing: true, excludeFromExport: true,
+    });
+    canvas.add(ring);
+  });
+  canvas.requestRenderAll();
+}
+
+// Refresh spacing circles when objects change
+(function(){
+  setTimeout(() => {
+    if(!canvas) return;
+    ['object:modified','object:added','object:removed'].forEach(evt => {
+      canvas.on(evt, () => { if(showSpacingCircles) setTimeout(renderSpacingCircles, 50); });
+    });
+  }, 500);
+})();
+
+/* ── Show templates on first load if empty ──── */
+(function(){
+  setTimeout(() => {
+    if(!canvas) return;
+    const objCount = canvas.getObjects().filter(o => !o._isGrid).length;
+    if(objCount === 0) showTemplates();
+  }, 800);
+})();
 </script>
 </body>
 </html>
