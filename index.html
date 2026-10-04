@@ -10,423 +10,808 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-:root {
-  --pakistan-green:#1f3d1d;
-  --asparagus:#7da24b;
-  --field-drab:#775d2f;
-  --dun:#d1c7a3;
-  --ivory:#fffdee;
-  --text:#1f3d1d;
-  --text-muted:#775d2f;
-  --bg:#f5f4ec;
-  --surface:#ffffff;
-  --border:#e0e1de;
-  --shadow:0 1px 3px rgba(20,30,20,0.08);
-  --sidebar-w:240px;
+:root{
+  --pk:#1f3d1d;--asp:#7da24b;--fd:#775d2f;--dun:#d1c7a3;--ivory:#fffdee;
+  --text:#1f3d1d;--text2:#5a6a5a;--bg:#f5f4ec;--surf:#fff;--brd:#e0e1de;
+  --sb-w:280px;--tb-h:42px;--tool-h:36px;--ruler:22px;
 }
-html[data-theme="dark"] {
-  --text:#eef2ea;
-  --text-muted:#9db19c;
-  --bg:#121a15;
-  --surface:#1a241d;
-  --border:#2b362e;
-  --shadow:0 1px 3px rgba(0,0,0,0.3);
-}
-*{box-sizing:border-box; margin:0; padding:0;}
-body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; flex-direction:column;}
+html[data-theme="dark"]{--text:#eef2ea;--text2:#8a9a8a;--bg:#121a15;--surf:#1a241d;--brd:#2b362e;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+button{font-family:inherit;}
 
-/* Topbar */
-.topbar{
-  background:linear-gradient(180deg,var(--pakistan-green),var(--asparagus));
-  color:var(--ivory); padding:8px 16px; display:flex; align-items:center; gap:12px; z-index:20; flex-shrink:0;
-}
-.topbar h1{font-size:16px; font-weight:700; flex:1;}
-.topbar-btn{background:rgba(255,253,238,0.12); border:1px solid rgba(255,253,238,0.3); color:var(--ivory); font-size:12px; font-weight:600; padding:6px 12px; border-radius:7px; cursor:pointer; white-space:nowrap;}
-.topbar-btn:hover{background:rgba(255,253,238,0.22);}
-.topbar-btn.active{background:rgba(125,162,75,0.4); border-color:rgba(125,162,75,0.7);}
-.topbar select{background:rgba(255,253,238,0.12); border:1px solid rgba(255,253,238,0.3); color:var(--ivory); font-size:12px; padding:6px 8px; border-radius:7px; cursor:pointer;}
-.topbar select option{background:var(--surface); color:var(--text);}
-.zoom-display{font-size:11px; color:var(--dun); min-width:40px; text-align:center;}
+/* ─ Topbar ─ */
+.topbar{background:linear-gradient(180deg,var(--pk),#2a5025);color:var(--ivory);padding:0 12px;display:flex;align-items:center;gap:8px;height:var(--tb-h);z-index:20;flex-shrink:0;}
+.topbar h1{font-size:15px;font-weight:800;letter-spacing:-.02em;}
+.tb-sep{width:1px;height:20px;background:rgba(255,253,238,0.2);flex-shrink:0;}
+.tb-btn{background:rgba(255,253,238,0.1);border:1px solid rgba(255,253,238,0.2);color:var(--ivory);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;white-space:nowrap;transition:background .12s;}
+.tb-btn:hover{background:rgba(255,253,238,0.2);}
+.tb-btn.on{background:rgba(125,162,75,0.5);border-color:var(--asp);}
+.tb-select{background:rgba(255,253,238,0.1);border:1px solid rgba(255,253,238,0.2);color:var(--ivory);font-size:11px;padding:4px 6px;border-radius:6px;cursor:pointer;}
+.tb-select option{background:var(--surf);color:var(--text);}
+.tb-zoom{font-size:11px;color:var(--dun);min-width:36px;text-align:center;}
+.tb-spacer{flex:1;}
+.mobile-tog{display:none;background:none;border:none;color:var(--ivory);font-size:18px;cursor:pointer;padding:2px 4px;}
 
-/* Layout */
-.workspace{display:flex; flex:1; overflow:hidden;}
+/* ─ Toolbar ─ */
+.toolbar{display:flex;align-items:center;gap:2px;background:var(--surf);border-bottom:1px solid var(--brd);padding:2px 8px;height:var(--tool-h);flex-shrink:0;overflow-x:auto;}
+.tool-btn{width:30px;height:30px;border:1px solid transparent;border-radius:6px;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:14px;transition:all .1s;position:relative;}
+.tool-btn:hover{background:var(--bg);border-color:var(--brd);}
+.tool-btn.active{background:rgba(125,162,75,0.15);border-color:var(--asp);color:var(--asp);}
+.tool-btn svg{width:18px;height:18px;fill:currentColor;}
+.tool-sep{width:1px;height:22px;background:var(--brd);margin:0 4px;}
+.tool-btn[title]:hover::after{content:attr(title);position:absolute;top:100%;left:50%;transform:translateX(-50%);background:#333;color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;white-space:nowrap;z-index:99;pointer-events:none;margin-top:4px;}
 
-/* Sidebar */
-.sidebar{
-  width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border);
-  display:flex; flex-direction:column; flex-shrink:0; overflow:hidden; z-index:10;
-}
-.sidebar-tabs{display:flex; border-bottom:1px solid var(--border);}
-.sidebar-tab{flex:1; padding:8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; text-align:center; cursor:pointer; border:none; background:none; color:var(--text-muted); border-bottom:2px solid transparent;}
-.sidebar-tab.active{color:var(--asparagus); border-bottom-color:var(--asparagus);}
-.sidebar-content{flex:1; overflow-y:auto; padding:10px;}
+/* ─ Layout ─ */
+.workspace{display:flex;flex:1;overflow:hidden;}
 
-/* Element library */
-.lib-section{margin-bottom:12px;}
-.lib-section-title{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin-bottom:6px;}
-.lib-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:6px;}
-.lib-item{
-  display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 4px;
-  background:var(--bg); border:1px solid var(--border); border-radius:8px; cursor:grab;
-  font-size:10px; color:var(--text); text-align:center; transition:border-color .15s, transform .1s;
-  user-select:none;
-}
-.lib-item:hover{border-color:var(--asparagus); transform:translateY(-1px);}
-.lib-item:active{cursor:grabbing; transform:scale(0.95);}
-.lib-icon{font-size:22px; line-height:1;}
+/* ─ Sidebar ─ */
+.sidebar{width:var(--sb-w);background:var(--surf);border-right:1px solid var(--brd);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;z-index:10;}
+.sb-tabs{display:flex;border-bottom:1px solid var(--brd);}
+.sb-tab{flex:1;padding:7px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;text-align:center;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;transition:color .12s;}
+.sb-tab.active{color:var(--asp);border-bottom-color:var(--asp);}
+.sb-content{flex:1;overflow-y:auto;padding:10px;}
 
-/* Properties panel */
-.prop-group{margin-bottom:14px;}
-.prop-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); margin-bottom:4px;}
-.prop-row{display:flex; gap:6px; margin-bottom:6px; align-items:center;}
-.prop-input{flex:1; background:var(--bg); border:1px solid var(--border); border-radius:6px; padding:5px 8px; font-size:12px; color:var(--text); min-width:0;}
-.prop-input:focus{outline:none; box-shadow:inset 0 0 0 1.5px var(--asparagus);}
-.prop-unit{font-size:10px; color:var(--text-muted); flex-shrink:0; width:20px;}
-.prop-btn{background:var(--bg); border:1px solid var(--border); color:var(--text); font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer;}
-.prop-btn:hover{background:var(--border);}
+/* ─ Library ─ */
+.lib-search{width:100%;background:var(--bg);border:1px solid var(--brd);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text);margin-bottom:8px;}
+.lib-search:focus{outline:none;box-shadow:inset 0 0 0 1.5px var(--asp);}
+.lib-sec{margin-bottom:12px;}
+.lib-sec-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:4px;cursor:pointer;user-select:none;}
+.lib-sec-hd .chev{transition:transform .15s;font-size:8px;}
+.lib-sec-hd.collapsed .chev{transform:rotate(-90deg);}
+.lib-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px;}
+.lib-item{display:flex;align-items:center;gap:8px;padding:7px 8px;background:var(--bg);border:1px solid var(--brd);border-radius:8px;cursor:grab;font-size:11px;color:var(--text);transition:border-color .12s,transform .08s;user-select:none;}
+.lib-item:hover{border-color:var(--asp);transform:translateY(-1px);}
+.lib-item:active{cursor:grabbing;transform:scale(.97);}
+.lib-icon-wrap{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.lib-item-info{min-width:0;}
+.lib-item-name{font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lib-item-meta{font-size:9px;color:var(--text2);white-space:nowrap;}
+
+/* ─ Properties ─ */
+.prop-grp{margin-bottom:12px;}
+.prop-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text2);margin-bottom:4px;}
+.prop-row{display:flex;gap:6px;margin-bottom:5px;align-items:center;}
+.prop-in{flex:1;background:var(--bg);border:1px solid var(--brd);border-radius:5px;padding:4px 7px;font-size:12px;color:var(--text);min-width:0;}
+.prop-in:focus{outline:none;box-shadow:inset 0 0 0 1.5px var(--asp);}
+.prop-u{font-size:9px;color:var(--text2);flex-shrink:0;width:16px;}
+.prop-btn{background:var(--bg);border:1px solid var(--brd);color:var(--text);font-size:10px;font-weight:600;padding:4px 8px;border-radius:5px;cursor:pointer;}
+.prop-btn:hover{background:var(--brd);}
 .prop-btn.danger{color:#b3452f;}
-.prop-color{width:28px; height:28px; border:1px solid var(--border); border-radius:6px; cursor:pointer; padding:0;}
-
-/* Designs list */
-.design-item{display:flex; align-items:center; gap:8px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; cursor:pointer; background:var(--bg);}
-.design-item:hover{border-color:var(--asparagus);}
-.design-item.active{border-color:var(--asparagus); background:rgba(125,162,75,0.08);}
-.design-name{flex:1; font-size:12px; font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.design-date{font-size:10px; color:var(--text-muted);}
-.design-del{background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px 4px;}
-.design-del:hover{color:#b3452f;}
-
-/* Canvas area */
-.canvas-wrap{flex:1; position:relative; overflow:hidden; background:#e8e6dc;}
-html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
-.canvas-wrap canvas{position:absolute; top:0; left:0;}
-
-/* Status bar */
-.statusbar{background:var(--surface); border-top:1px solid var(--border); padding:4px 16px; font-size:11px; color:var(--text-muted); display:flex; gap:16px; flex-shrink:0;}
-
-/* Mobile */
-@media(max-width:768px){
-  .sidebar{position:absolute; left:0; top:0; bottom:0; z-index:30; transform:translateX(-100%); transition:transform .2s ease; box-shadow:4px 0 20px rgba(0,0,0,0.15);}
-  .sidebar.open{transform:translateX(0);}
-  .sidebar-backdrop{display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:25;}
-  .sidebar-backdrop.open{display:block;}
-  .mobile-toggle{display:flex !important;}
-}
-.mobile-toggle{display:none; background:none; border:none; color:var(--ivory); font-size:20px; cursor:pointer; padding:4px;}
-
-/* Helpers */
-.empty-state{text-align:center; padding:30px 16px; color:var(--text-muted); font-size:12px;}
-.btn-sm{font-size:11px; font-weight:600; padding:5px 10px; border-radius:6px; cursor:pointer; border:1px solid transparent;}
-.btn-primary{background:var(--asparagus); color:var(--ivory); border-color:var(--asparagus);}
+.btn-sm{font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;}
+.btn-primary{background:var(--asp);color:var(--ivory);border-color:var(--asp);}
 .btn-primary:hover{filter:brightness(1.06);}
+
+/* ─ Layers ─ */
+.layer-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--brd);border-radius:7px;margin-bottom:4px;cursor:pointer;background:var(--bg);font-size:11px;}
+.layer-item.active{border-color:var(--asp);background:rgba(125,162,75,0.08);}
+.layer-vis{width:18px;height:18px;border:1px solid var(--brd);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;background:var(--surf);}
+.layer-vis.off{opacity:.4;}
+.layer-name{flex:1;font-weight:600;}
+.layer-count{font-size:10px;color:var(--text2);}
+
+/* ─ Budget ─ */
+.budget-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px;border-bottom:1px solid var(--brd);}
+.budget-row:last-child{border:none;font-weight:700;}
+.budget-total{font-size:14px;font-weight:800;color:var(--asp);margin-top:6px;}
+
+/* ─ Designs ─ */
+.des-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--brd);border-radius:8px;margin-bottom:5px;cursor:pointer;background:var(--bg);}
+.des-item:hover{border-color:var(--asp);}
+.des-item.active{border-color:var(--asp);background:rgba(125,162,75,0.08);}
+.des-name{flex:1;font-size:12px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.des-date{font-size:10px;color:var(--text2);}
+.des-del{background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:2px 4px;}
+.des-del:hover{color:#b3452f;}
+
+/* ─ Canvas area ─ */
+.canvas-area{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.ruler-corner{width:var(--ruler);height:var(--ruler);background:var(--surf);border-right:1px solid var(--brd);border-bottom:1px solid var(--brd);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--text2);cursor:pointer;}
+.ruler-h-wrap{display:flex;height:var(--ruler);flex-shrink:0;}
+.ruler-h{flex:1;background:var(--surf);border-bottom:1px solid var(--brd);overflow:hidden;position:relative;}
+.ruler-v-wrap{display:flex;flex:1;overflow:hidden;}
+.ruler-v{width:var(--ruler);background:var(--surf);border-right:1px solid var(--brd);overflow:hidden;position:relative;flex-shrink:0;}
+.canvas-wrap{flex:1;position:relative;overflow:hidden;background:#e8e6dc;}
+html[data-theme="dark"] .canvas-wrap{background:#0e140f;}
+
+/* ─ Statusbar ─ */
+.statusbar{background:var(--surf);border-top:1px solid var(--brd);padding:3px 12px;font-size:10px;color:var(--text2);display:flex;gap:14px;flex-shrink:0;align-items:center;height:24px;}
+.status-pill{background:var(--bg);border:1px solid var(--brd);border-radius:4px;padding:1px 6px;}
+
+/* ─ Context menu ─ */
+.ctx-menu{position:fixed;background:var(--surf);border:1px solid var(--brd);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);padding:4px;z-index:100;min-width:160px;display:none;}
+.ctx-item{padding:6px 12px;font-size:12px;cursor:pointer;border-radius:5px;display:flex;align-items:center;gap:8px;}
+.ctx-item:hover{background:var(--bg);}
+.ctx-item.danger{color:#b3452f;}
+.ctx-sep{height:1px;background:var(--brd);margin:3px 8px;}
+.ctx-shortcut{margin-left:auto;font-size:10px;color:var(--text2);}
+
+/* ─ Measure overlay ─ */
+.measure-label{position:absolute;background:rgba(31,61,29,0.9);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;pointer-events:none;white-space:nowrap;z-index:15;}
+
+/* ─ Modal ─ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--surf);border-radius:12px;padding:24px;max-width:400px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,0.2);}
+.modal h3{margin-bottom:12px;font-size:16px;}
+.modal .prop-row{margin-bottom:8px;}
+
+/* ─ Mobile ─ */
+@media(max-width:768px){
+  .sidebar{position:absolute;left:0;top:0;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .2s ease;box-shadow:4px 0 20px rgba(0,0,0,0.15);}
+  .sidebar.open{transform:translateX(0);}
+  .sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:25;}
+  .sb-backdrop.open{display:block;}
+  .mobile-tog{display:flex !important;}
+  .toolbar{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+}
+.empty-state{text-align:center;padding:24px 16px;color:var(--text2);font-size:12px;line-height:1.5;}
 </style>
 </head>
 <body>
 
+<!-- Topbar -->
 <header class="topbar">
-  <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
+  <button class="mobile-tog" onclick="toggleSidebar()">☰</button>
   <h1>Garden Planner</h1>
-  <span class="zoom-display" id="zoomDisplay">100%</span>
-  <button class="topbar-btn" onclick="zoomCanvas(0.1)">+</button>
-  <button class="topbar-btn" onclick="zoomCanvas(-0.1)">−</button>
-  <button class="topbar-btn" onclick="resetZoom()">Fit</button>
-  <select id="gridSize" onchange="setGrid(this.value)">
-    <option value="20">Grid: 20px</option>
-    <option value="40" selected>Grid: 40px</option>
+  <div class="tb-sep"></div>
+  <span class="tb-zoom" id="zoomDisp">100%</span>
+  <button class="tb-btn" onclick="zoomBy(0.15)" title="Zoom in">+</button>
+  <button class="tb-btn" onclick="zoomBy(-0.15)" title="Zoom out">−</button>
+  <button class="tb-btn" onclick="zoomFit()">Fit</button>
+  <div class="tb-sep"></div>
+  <select class="tb-select" id="unitSel" onchange="setUnit(this.value)">
+    <option value="ft">Scale: ft</option>
+    <option value="m">Scale: m</option>
+    <option value="px">Scale: px</option>
+  </select>
+  <select class="tb-select" id="gridSel" onchange="setGrid(+this.value)">
+    <option value="12">Grid: 1 ft</option>
+    <option value="24" selected>Grid: 2 ft</option>
+    <option value="60">Grid: 5 ft</option>
     <option value="0">Grid: Off</option>
   </select>
-  <button class="topbar-btn" onclick="toggleSnap()" id="snapBtn">Snap: On</button>
-  <button class="topbar-btn" onclick="undoAction()">Undo</button>
-  <button class="topbar-btn" onclick="redoAction()">Redo</button>
-  <button class="topbar-btn" onclick="toggleTheme()">Dark</button>
+  <button class="tb-btn" onclick="toggleSnap()" id="snapBtn" class="tb-btn on">Snap</button>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn" onclick="exportPNG()">Export PNG</button>
+  <button class="tb-btn" onclick="toggleTheme()">Dark</button>
 </header>
 
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <button class="tool-btn active" data-tool="select" onclick="setTool('select')" title="Select (V)">
+    <svg viewBox="0 0 24 24"><path d="M5 3l14 9-6 1.5L10 20z"/></svg>
+  </button>
+  <button class="tool-btn" data-tool="pan" onclick="setTool('pan')" title="Pan (H)">
+    <svg viewBox="0 0 24 24"><path d="M12 2l3 3h-2v4h4v-2l3 3-3 3v-2h-4v4h2l-3 3-3-3h2v-4H7v2l-3-3 3-3v2h4V5H9z"/></svg>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" data-tool="rect" onclick="setTool('rect')" title="Draw Rectangle (R)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button class="tool-btn" data-tool="circle" onclick="setTool('circle')" title="Draw Circle (C)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button class="tool-btn" data-tool="poly" onclick="setTool('poly')" title="Draw Polygon (P)">
+    <svg viewBox="0 0 24 24"><polygon points="12,2 22,9 18,22 6,22 2,9" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+  </button>
+  <button class="tool-btn" data-tool="line" onclick="setTool('line')" title="Draw Line (L)">
+    <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" data-tool="measure" onclick="setTool('measure')" title="Measure (M)">
+    <svg viewBox="0 0 24 24"><path d="M3 21L21 3M3 21l3-1.5M3 21l1.5-3M8 16l1-1M12 12l1-1M16 8l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <button class="tool-btn" data-tool="text" onclick="setTool('text')" title="Add Text (T)">
+    <svg viewBox="0 0 24 24"><path d="M5 4h14v3M12 4v16M9 20h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" onclick="undoAction()" title="Undo (Ctrl+Z)">
+    <svg viewBox="0 0 24 24"><path d="M4 10l5-5v3h6a5 5 0 010 10H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button class="tool-btn" onclick="redoAction()" title="Redo (Ctrl+Y)">
+    <svg viewBox="0 0 24 24"><path d="M20 10l-5-5v3H9a5 5 0 000 10h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="tool-sep"></div>
+  <button class="tool-btn" onclick="deleteSelected()" title="Delete (Del)">
+    <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7zM4 7h16M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <button class="tool-btn" onclick="duplicateSelected()" title="Duplicate (Ctrl+D)">
+    <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 16V6a2 2 0 012-2h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
 <div class="workspace">
-  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar()"></div>
+  <div class="sb-backdrop" id="sbBackdrop" onclick="toggleSidebar()"></div>
   <aside class="sidebar" id="sidebar">
-    <div class="sidebar-tabs">
-      <button class="sidebar-tab active" onclick="switchTab('library',this)">Library</button>
-      <button class="sidebar-tab" onclick="switchTab('properties',this)">Properties</button>
-      <button class="sidebar-tab" onclick="switchTab('designs',this)">Designs</button>
+    <div class="sb-tabs">
+      <button class="sb-tab active" onclick="switchTab('library',this)">Plants</button>
+      <button class="sb-tab" onclick="switchTab('layers',this)">Layers</button>
+      <button class="sb-tab" onclick="switchTab('properties',this)">Props</button>
+      <button class="sb-tab" onclick="switchTab('budget',this)">Budget</button>
+      <button class="sb-tab" onclick="switchTab('designs',this)">Designs</button>
     </div>
-    <div class="sidebar-content" id="sidebarContent"></div>
+    <div class="sb-content" id="sbContent"></div>
   </aside>
-  <div class="canvas-wrap" id="canvasWrap">
-    <canvas id="gardenCanvas"></canvas>
+
+  <div class="canvas-area">
+    <div class="ruler-h-wrap">
+      <div class="ruler-corner" id="rulerCorner" onclick="setUnit(unitSel.value==='ft'?'m':'ft');unitSel.value=curUnit;">ft</div>
+      <canvas class="ruler-h" id="rulerH"></canvas>
+    </div>
+    <div class="ruler-v-wrap">
+      <canvas class="ruler-v" id="rulerV"></canvas>
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="c"></canvas>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="statusbar">
-  <span id="statusCoords">0, 0</span>
-  <span id="statusSelected">No selection</span>
-  <span id="statusObjects">0 objects</span>
+  <span id="stCoords">0, 0</span>
+  <span class="status-pill" id="stTool">Select</span>
+  <span id="stSel">No selection</span>
+  <span id="stCount">0 objects</span>
+  <span id="stArea"></span>
+  <span style="margin-left:auto" id="stScale">1 grid = 2 ft</span>
 </div>
 
-<script>if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
+<!-- Context menu -->
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="duplicateSelected();hideCtx()">Duplicate<span class="ctx-shortcut">Ctrl+D</span></div>
+  <div class="ctx-item" onclick="copySelected();hideCtx()">Copy<span class="ctx-shortcut">Ctrl+C</span></div>
+  <div class="ctx-item" onclick="pasteClipboard();hideCtx()">Paste<span class="ctx-shortcut">Ctrl+V</span></div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="bringFront();hideCtx()">Bring to Front</div>
+  <div class="ctx-item" onclick="sendBack();hideCtx()">Send to Back</div>
+  <div class="ctx-item" onclick="lockSelected();hideCtx()">Lock / Unlock</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="groupSelected();hideCtx()">Group<span class="ctx-shortcut">Ctrl+G</span></div>
+  <div class="ctx-item" onclick="ungroupSelected();hideCtx()">Ungroup</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item danger" onclick="deleteSelected();hideCtx()">Delete<span class="ctx-shortcut">Del</span></div>
+</div>
+
+<script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <script>
-/* ── State ─────────────────────────────────────── */
-let canvas, gridSize = 40, snapOn = true, currentDesignId = null;
-let undoStack = [], redoStack = [], maxUndo = 40;
-const designs = JSON.parse(localStorage.getItem('nb_garden_designs') || '{}');
+/* ════════════════════════════════════════════════
+   Garden Planner Pro — Newberry House
+   ════════════════════════════════════════════════ */
 
-/* ── Plant / element library ───────────────────── */
-const LIBRARY = [
-  { section: 'Trees', items: [
-    { name:'Oak',       icon:'🌳', w:80, h:80, color:'#2d5a1e', shape:'circle' },
-    { name:'Pine',      icon:'🌲', w:60, h:60, color:'#1e4a1e', shape:'circle' },
-    { name:'Palm',      icon:'🌴', w:50, h:50, color:'#4a8a2a', shape:'circle' },
-    { name:'Fruit',     icon:'🍎', w:60, h:60, color:'#5a9a3a', shape:'circle' },
-    { name:'Small',     icon:'🌿', w:40, h:40, color:'#6aaa4a', shape:'circle' },
+/* ── Constants ──────────────────────────────────── */
+const PPF = 12; // pixels per foot
+let curUnit = 'ft', gridPx = 24, snapOn = true, activeTool = 'select';
+let canvas, currentDesignId = null;
+let undoStack = [], redoStack = [], maxUndo = 50;
+let clipboard = null;
+let drawStart = null, drawObj = null, polyPoints = [];
+let measureStart = null, measureLine = null, measureLabels = [];
+const designs = JSON.parse(localStorage.getItem('gp_designs') || '{}');
+const CUSTOM_PROPS = ['_name','_icon','_type','_layer','_data','_cost','_notes','_locked','_spread','_sun','_water'];
+
+const LAYERS = [
+  { id:'boundary', name:'Property Boundary', color:'#775d2f', visible:true },
+  { id:'hardscape', name:'Hardscape', color:'#a89070', visible:true },
+  { id:'planting', name:'Planting', color:'#7da24b', visible:true },
+  { id:'water', name:'Water Features', color:'#4a8ab0', visible:true },
+  { id:'structures', name:'Structures', color:'#8a7a6a', visible:true },
+  { id:'irrigation', name:'Irrigation', color:'#5a9ad0', visible:true },
+  { id:'annotations', name:'Annotations', color:'#775d2f', visible:true },
+];
+
+/* ── Plant database ─────────────────────────────── */
+const PLANTS = [
+  { section:'Trees — Deciduous', items:[
+    { name:'Red Oak',     spread:40, h:60,  sun:'full',  water:'low',    cost:180, color:'#2d5a1e', z:4 },
+    { name:'Sugar Maple', spread:35, h:55,  sun:'full',  water:'med',    cost:160, color:'#3a6a20', z:4 },
+    { name:'River Birch', spread:25, h:45,  sun:'full',  water:'high',   cost:120, color:'#5a8a30', z:3 },
+    { name:'Dogwood',     spread:20, h:25,  sun:'part',  water:'med',    cost:90,  color:'#6a9a40', z:3 },
+    { name:'Crabapple',   spread:18, h:20,  sun:'full',  water:'med',    cost:85,  color:'#7aaa50', z:3 },
+    { name:'Japanese Maple',spread:15,h:18, sun:'part',  water:'med',    cost:200, color:'#8a3030', z:2 },
   ]},
-  { section: 'Shrubs & Beds', items: [
-    { name:'Hedge',     icon:'🟩', w:120,h:30, color:'#3a7a2a', shape:'rect' },
-    { name:'Bush',      icon:'🌿', w:50, h:50, color:'#4a8a3a', shape:'circle' },
-    { name:'Flower Bed',icon:'🌸', w:100,h:60, color:'#c97ab5', shape:'rect' },
-    { name:'Veggie Bed',icon:'🥕', w:120,h:60, color:'#6a4a2a', shape:'rect' },
-    { name:'Grass',     icon:'🟢', w:100,h:100,color:'#5aaa3a', shape:'rect' },
+  { section:'Trees — Evergreen', items:[
+    { name:'White Pine',   spread:25, h:60,  sun:'full',  water:'low',   cost:140, color:'#1e4a1e', z:4 },
+    { name:'Blue Spruce',  spread:15, h:50,  sun:'full',  water:'low',   cost:160, color:'#2a5a4a', z:4 },
+    { name:'Eastern Red Cedar',spread:12,h:35,sun:'full', water:'low',   cost:80,  color:'#2a4a2a', z:3 },
+    { name:'Arborvitae',   spread:5,  h:15,  sun:'full',  water:'med',   cost:45,  color:'#3a6a2a', z:2 },
+    { name:'Holly',        spread:10, h:20,  sun:'part',  water:'med',   cost:55,  color:'#1a4a1a', z:2 },
   ]},
-  { section: 'Hardscape', items: [
-    { name:'Path',      icon:'🟫', w:160,h:30, color:'#a89070', shape:'rect' },
-    { name:'Patio',     icon:'⬜', w:120,h:100,color:'#c0b8a0', shape:'rect' },
-    { name:'Deck',      icon:'🟫', w:120,h:80, color:'#8a6a40', shape:'rect' },
-    { name:'Wall',      icon:'🧱', w:140,h:16, color:'#7a6a5a', shape:'rect' },
-    { name:'Fence',     icon:'🏗️', w:160,h:10, color:'#9a8a6a', shape:'rect' },
-    { name:'Steps',     icon:'🪜', w:60, h:40, color:'#8a7a6a', shape:'rect' },
+  { section:'Shrubs', items:[
+    { name:'Boxwood',      spread:4,  h:4,   sun:'part',  water:'med',   cost:35,  color:'#4a7a3a', z:1 },
+    { name:'Hydrangea',    spread:5,  h:5,   sun:'part',  water:'high',  cost:30,  color:'#7a8ac0', z:1 },
+    { name:'Azalea',       spread:5,  h:4,   sun:'part',  water:'med',   cost:25,  color:'#c06080', z:1 },
+    { name:'Rose Bush',    spread:4,  h:4,   sun:'full',  water:'med',   cost:20,  color:'#c04050', z:1 },
+    { name:'Lilac',        spread:8,  h:10,  sun:'full',  water:'low',   cost:35,  color:'#9070b0', z:2 },
+    { name:'Forsythia',    spread:8,  h:8,   sun:'full',  water:'low',   cost:25,  color:'#c0b030', z:1 },
+    { name:'Butterfly Bush',spread:6, h:6,   sun:'full',  water:'low',   cost:20,  color:'#8050a0', z:1 },
   ]},
-  { section: 'Water', items: [
-    { name:'Pond',      icon:'💧', w:80, h:60, color:'#4a8ab0', shape:'ellipse' },
-    { name:'Pool',      icon:'🏊', w:120,h:80, color:'#5aaaca', shape:'rect' },
-    { name:'Fountain',  icon:'⛲', w:50, h:50, color:'#6abadd', shape:'circle' },
+  { section:'Perennials', items:[
+    { name:'Hosta',        spread:3,  h:2,   sun:'shade', water:'med',   cost:12,  color:'#5a9a4a', z:0 },
+    { name:'Daylily',      spread:2,  h:2,   sun:'full',  water:'low',   cost:8,   color:'#d0a030', z:0 },
+    { name:'Coneflower',   spread:2,  h:3,   sun:'full',  water:'low',   cost:10,  color:'#c06090', z:0 },
+    { name:'Black-eyed Susan',spread:2,h:3,  sun:'full',  water:'low',   cost:8,   color:'#d0b020', z:0 },
+    { name:'Lavender',     spread:2,  h:2,   sun:'full',  water:'low',   cost:12,  color:'#8070b0', z:0 },
+    { name:'Ornamental Grass',spread:4,h:5,  sun:'full',  water:'low',   cost:15,  color:'#a09060', z:1 },
   ]},
-  { section: 'Structures', items: [
-    { name:'House',     icon:'🏠', w:160,h:120,color:'#8a7a6a', shape:'rect' },
-    { name:'Shed',      icon:'🏚️', w:80, h:60, color:'#7a6a5a', shape:'rect' },
-    { name:'Pergola',   icon:'🏗️', w:100,h:80, color:'#b0a080', shape:'rect' },
-    { name:'Greenhouse',icon:'🏡', w:100,h:60, color:'#90c070', shape:'rect' },
-    { name:'Bench',     icon:'🪑', w:60, h:20, color:'#6a5a4a', shape:'rect' },
+  { section:'Ground Cover', items:[
+    { name:'Lawn (sod)',   spread:1,  h:0,   sun:'full',  water:'high',  cost:0.50,color:'#5aaa3a', z:0, unit:'sq ft' },
+    { name:'Mulch',        spread:1,  h:0,   sun:'any',   water:'none',  cost:0.15,color:'#6a4a2a', z:0, unit:'sq ft' },
+    { name:'River Rock',   spread:1,  h:0,   sun:'any',   water:'none',  cost:0.80,color:'#8a8a7a', z:0, unit:'sq ft' },
+    { name:'Creeping Thyme',spread:2, h:0.3, sun:'full',  water:'low',   cost:6,   color:'#7a9060', z:0 },
+  ]},
+  { section:'Hardscape', layer:'hardscape', items:[
+    { name:'Concrete Patio', spread:1, h:0,  sun:'any',   water:'none',  cost:8,   color:'#b0a890', z:0, unit:'sq ft', shape:'rect', w:12, ht:10 },
+    { name:'Brick Patio',    spread:1, h:0,  sun:'any',   water:'none',  cost:12,  color:'#a07060', z:0, unit:'sq ft', shape:'rect', w:12, ht:10 },
+    { name:'Flagstone Path', spread:1, h:0,  sun:'any',   water:'none',  cost:10,  color:'#908070', z:0, unit:'sq ft', shape:'rect', w:20, ht:3 },
+    { name:'Gravel Path',    spread:1, h:0,  sun:'any',   water:'none',  cost:3,   color:'#a09a80', z:0, unit:'sq ft', shape:'rect', w:20, ht:3 },
+    { name:'Retaining Wall', spread:1, h:3,  sun:'any',   water:'none',  cost:25,  color:'#7a6a5a', z:0, unit:'lin ft',shape:'rect', w:16, ht:1 },
+    { name:'Fence — Wood',   spread:1, h:6,  sun:'any',   water:'none',  cost:18,  color:'#8a6a40', z:0, unit:'lin ft',shape:'rect', w:20, ht:0.5 },
+    { name:'Fence — Metal',  spread:1, h:4,  sun:'any',   water:'none',  cost:30,  color:'#4a4a4a', z:0, unit:'lin ft',shape:'rect', w:20, ht:0.5 },
+    { name:'Stepping Stones',spread:1, h:0,  sun:'any',   water:'none',  cost:5,   color:'#908880', z:0, unit:'each',  shape:'circle', w:1.5 },
+    { name:'Steps / Stairs', spread:1, h:2,  sun:'any',   water:'none',  cost:40,  color:'#7a7060', z:0, unit:'each',  shape:'rect', w:5, ht:3 },
+  ]},
+  { section:'Water Features', layer:'water', items:[
+    { name:'Pond',          spread:8,  h:0,  sun:'part',  water:'none',  cost:1500,color:'#4a8ab0', z:0, shape:'ellipse', w:8, ht:6 },
+    { name:'Fountain',      spread:3,  h:3,  sun:'any',   water:'none',  cost:400, color:'#6abadd', z:0, shape:'circle', w:3 },
+    { name:'Birdbath',      spread:2,  h:3,  sun:'any',   water:'none',  cost:80,  color:'#7ac0e0', z:0, shape:'circle', w:2 },
+    { name:'Rain Garden',   spread:1,  h:0,  sun:'full',  water:'high',  cost:5,   color:'#4aa080', z:0, unit:'sq ft', shape:'ellipse', w:10, ht:6 },
+  ]},
+  { section:'Structures', layer:'structures', items:[
+    { name:'House Footprint',spread:1, h:0,  sun:'any',   water:'none',  cost:0,   color:'#8a7a6a', z:0, shape:'rect', w:50, ht:30 },
+    { name:'Garage',        spread:1,  h:0,  sun:'any',   water:'none',  cost:0,   color:'#7a6a5a', z:0, shape:'rect', w:20, ht:20 },
+    { name:'Shed',          spread:1,  h:8,  sun:'any',   water:'none',  cost:2000,color:'#6a5a4a', z:0, shape:'rect', w:10, ht:8 },
+    { name:'Pergola',       spread:1,  h:9,  sun:'any',   water:'none',  cost:3000,color:'#b0a080', z:0, shape:'rect', w:12, ht:10 },
+    { name:'Deck',          spread:1,  h:2,  sun:'any',   water:'none',  cost:15,  color:'#8a6a40', z:0, unit:'sq ft', shape:'rect', w:14, ht:12 },
+    { name:'Fire Pit',      spread:5,  h:2,  sun:'any',   water:'none',  cost:500, color:'#a05030', z:0, shape:'circle', w:5 },
+    { name:'Raised Bed',    spread:1,  h:2,  sun:'full',  water:'med',   cost:80,  color:'#6a5030', z:0, shape:'rect', w:4, ht:8 },
+    { name:'Bench',         spread:1,  h:3,  sun:'any',   water:'none',  cost:200, color:'#5a4a3a', z:0, shape:'rect', w:5, ht:2 },
+    { name:'Playground',    spread:1,  h:8,  sun:'any',   water:'none',  cost:5000,color:'#c09040', z:0, shape:'rect', w:16, ht:12 },
   ]},
 ];
+
+const SUN_LABELS = { full:'Full Sun', part:'Part Shade', shade:'Full Shade', any:'Any' };
+const WATER_LABELS = { none:'None', low:'Low', med:'Medium', high:'High' };
+const SUN_ICONS = { full:'☀️', part:'⛅', shade:'🌑', any:'—' };
 
 /* ── Init ──────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
   initCanvas();
   renderTab('library');
   autoLoad();
-  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('resize', () => { resizeCanvas(); drawRulers(); });
+  document.addEventListener('click', e => { if(!e.target.closest('.ctx-menu')) hideCtx(); });
 });
 
 function initCanvas(){
   const wrap = document.getElementById('canvasWrap');
-  canvas = new fabric.Canvas('gardenCanvas', {
-    width: wrap.clientWidth,
-    height: wrap.clientHeight,
-    backgroundColor: 'transparent',
-    selection: true,
-    preserveObjectStacking: true,
+  canvas = new fabric.Canvas('c', {
+    width: wrap.clientWidth, height: wrap.clientHeight,
+    backgroundColor: 'transparent', selection: true, preserveObjectStacking: true,
+    fireRightClick: true, stopContextMenu: true,
   });
+
   drawGrid();
-  canvas.on('mouse:move', e => {
-    const p = canvas.getPointer(e.e);
-    document.getElementById('statusCoords').textContent = Math.round(p.x) + ', ' + Math.round(p.y);
-  });
-  canvas.on('selection:created', updateSelection);
-  canvas.on('selection:updated', updateSelection);
-  canvas.on('selection:cleared', () => {
-    document.getElementById('statusSelected').textContent = 'No selection';
-    if(document.querySelector('.sidebar-tab.active')?.textContent === 'Properties') renderTab('properties');
-  });
+  drawRulers();
+
+  canvas.on('mouse:move', onMouseMove);
+  canvas.on('mouse:down', onMouseDown);
+  canvas.on('mouse:up', onMouseUp);
+  canvas.on('mouse:wheel', onWheel);
+  canvas.on('selection:created', onSelect);
+  canvas.on('selection:updated', onSelect);
+  canvas.on('selection:cleared', onDeselect);
   canvas.on('object:modified', () => { saveUndo(); autoSave(); updateStatus(); });
-  canvas.on('object:added', () => updateStatus());
-  canvas.on('object:removed', () => updateStatus());
+  canvas.on('object:added', updateStatus);
+  canvas.on('object:removed', updateStatus);
+  canvas.on('object:moving', onObjMoving);
 
-  canvas.on('object:moving', e => {
-    if(!snapOn) return;
-    const obj = e.target;
-    const g = gridSize || 40;
-    obj.set({ left: Math.round(obj.left / g) * g, top: Math.round(obj.top / g) * g });
-  });
+  document.addEventListener('keydown', onKey);
+}
 
-  // Pan with middle mouse or alt+drag
-  let isPanning = false, lastPanX, lastPanY;
-  canvas.on('mouse:down', e => {
-    if(e.e.altKey || e.e.button === 1){
-      isPanning = true;
-      lastPanX = e.e.clientX;
-      lastPanY = e.e.clientY;
-      canvas.selection = false;
-    }
-  });
-  canvas.on('mouse:move', e => {
-    if(!isPanning) return;
+/* ── Tools ─────────────────────────────────────── */
+function setTool(t){
+  activeTool = t;
+  document.querySelectorAll('.tool-btn[data-tool]').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  document.getElementById('stTool').textContent = t.charAt(0).toUpperCase() + t.slice(1);
+  canvas.isDrawingMode = false;
+  canvas.selection = (t === 'select');
+  canvas.defaultCursor = t === 'pan' ? 'grab' : t === 'measure' ? 'crosshair' : t === 'text' ? 'text' : (t==='rect'||t==='circle'||t==='poly'||t==='line') ? 'crosshair' : 'default';
+  canvas.forEachObject(o => { if(!o._isGrid) o.selectable = (t === 'select'); });
+  if(t !== 'poly'){ polyPoints = []; }
+  clearMeasure();
+}
+
+/* ── Mouse handlers ────────────────────────────── */
+function onMouseMove(e){
+  const p = canvas.getPointer(e.e);
+  const label = toDisplay(p.x) + ', ' + toDisplay(p.y);
+  document.getElementById('stCoords').textContent = label;
+  drawRulers();
+
+  if(activeTool === 'pan' && e.e.buttons === 1){
     const vpt = canvas.viewportTransform;
-    vpt[4] += e.e.clientX - lastPanX;
-    vpt[5] += e.e.clientY - lastPanY;
-    lastPanX = e.e.clientX;
-    lastPanY = e.e.clientY;
+    vpt[4] += e.e.movementX;
+    vpt[5] += e.e.movementY;
     canvas.requestRenderAll();
-  });
-  canvas.on('mouse:up', () => { isPanning = false; canvas.selection = true; });
+    drawGrid(); drawRulers();
+    return;
+  }
 
-  // Zoom with scroll
-  canvas.on('mouse:wheel', e => {
-    const delta = e.e.deltaY;
-    let zoom = canvas.getZoom() * (delta > 0 ? 0.95 : 1.05);
-    zoom = Math.max(0.1, Math.min(5, zoom));
-    canvas.zoomToPoint({ x: e.e.offsetX, y: e.e.offsetY }, zoom);
-    document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
-    e.e.preventDefault();
-    e.e.stopPropagation();
-    drawGrid();
-  });
-
-  // Delete key
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Delete' || e.key === 'Backspace'){
-      if(document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
-      deleteSelected();
+  if(drawObj && (activeTool === 'rect' || activeTool === 'circle' || activeTool === 'line')){
+    const p2 = snapPoint(p);
+    if(activeTool === 'rect'){
+      const w = p2.x - drawStart.x, h = p2.y - drawStart.y;
+      drawObj.set({ left: w<0?p2.x:drawStart.x, top: h<0?p2.y:drawStart.y, width: Math.abs(w), height: Math.abs(h) });
+    } else if(activeTool === 'circle'){
+      const r = Math.sqrt((p2.x-drawStart.x)**2 + (p2.y-drawStart.y)**2);
+      drawObj.set({ radius: r });
+    } else if(activeTool === 'line'){
+      drawObj.set({ x2: p2.x, y2: p2.y });
     }
-    if((e.ctrlKey || e.metaKey) && e.key === 'z'){ e.preventDefault(); undoAction(); }
-    if((e.ctrlKey || e.metaKey) && e.key === 'y'){ e.preventDefault(); redoAction(); }
-    if((e.ctrlKey || e.metaKey) && e.key === 'd'){ e.preventDefault(); duplicateSelected(); }
-  });
+    canvas.requestRenderAll();
+  }
+
+  if(activeTool === 'measure' && measureStart){
+    if(measureLine) canvas.remove(measureLine);
+    measureLine = new fabric.Line([measureStart.x, measureStart.y, p.x, p.y], {
+      stroke: '#1f3d1d', strokeWidth: 2, strokeDashArray:[6,4], selectable:false, evented:false, _isMeasure:true
+    });
+    canvas.add(measureLine);
+    const dx = p.x - measureStart.x, dy = p.y - measureStart.y;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    document.getElementById('stArea').textContent = 'Distance: ' + toDisplay(dist);
+  }
 }
 
-function resizeCanvas(){
-  const wrap = document.getElementById('canvasWrap');
-  canvas.setDimensions({ width: wrap.clientWidth, height: wrap.clientHeight });
-  drawGrid();
+function onMouseDown(e){
+  if(e.e.button === 2){ showCtx(e.e); return; }
+
+  const p = snapPoint(canvas.getPointer(e.e));
+
+  if(activeTool === 'rect'){
+    saveUndo();
+    drawStart = p;
+    drawObj = new fabric.Rect({ left:p.x, top:p.y, width:1, height:1, fill:'rgba(125,162,75,0.3)', stroke:'#7da24b', strokeWidth:2,
+      rx:2, ry:2, _name:'Rectangle', _layer:'hardscape', _type:'shape', selectable:false, evented:false });
+    canvas.add(drawObj);
+  }
+  if(activeTool === 'circle'){
+    saveUndo();
+    drawStart = p;
+    drawObj = new fabric.Circle({ left:p.x, top:p.y, radius:1, fill:'rgba(125,162,75,0.3)', stroke:'#7da24b', strokeWidth:2,
+      originX:'center', originY:'center', _name:'Circle', _layer:'planting', _type:'shape', selectable:false, evented:false });
+    canvas.add(drawObj);
+  }
+  if(activeTool === 'line'){
+    saveUndo();
+    drawStart = p;
+    drawObj = new fabric.Line([p.x, p.y, p.x, p.y], { stroke:'#775d2f', strokeWidth:3, strokeLineCap:'round',
+      _name:'Line', _layer:'annotations', _type:'shape', selectable:false, evented:false });
+    canvas.add(drawObj);
+  }
+  if(activeTool === 'poly'){
+    polyPoints.push(p);
+    if(polyPoints.length > 2){
+      const first = polyPoints[0];
+      if(Math.abs(p.x - first.x) < 10 && Math.abs(p.y - first.y) < 10){
+        saveUndo();
+        const pts = polyPoints.map(pt => ({ x: pt.x, y: pt.y }));
+        const poly = new fabric.Polygon(pts, { fill:'rgba(125,162,75,0.3)', stroke:'#7da24b', strokeWidth:2,
+          _name:'Polygon', _layer:'planting', _type:'shape', cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false });
+        canvas.add(poly);
+        canvas.setActiveObject(poly);
+        polyPoints = [];
+        setTool('select');
+        autoSave();
+        return;
+      }
+    }
+  }
+  if(activeTool === 'text'){
+    saveUndo();
+    const txt = new fabric.IText('Label', { left:p.x, top:p.y, fontSize:14, fill:'#1f3d1d', fontFamily:'-apple-system,sans-serif',
+      fontWeight:'600', _name:'Text', _layer:'annotations', _type:'text',
+      cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false });
+    canvas.add(txt);
+    canvas.setActiveObject(txt);
+    txt.enterEditing();
+    setTool('select');
+    autoSave();
+  }
+  if(activeTool === 'measure'){
+    if(!measureStart){ measureStart = {x:p.x, y:p.y}; }
+    else { measureStart = null; clearMeasure(); }
+  }
 }
 
-/* ── Grid ──────────────────────────────────────── */
-function drawGrid(){
-  canvas.getObjects('line').filter(o => o._isGrid).forEach(o => canvas.remove(o));
-  if(!gridSize) return;
-  const zoom = canvas.getZoom();
-  const vpt = canvas.viewportTransform;
-  const w = canvas.width / zoom;
-  const h = canvas.height / zoom;
-  const offX = -vpt[4] / zoom;
-  const offY = -vpt[5] / zoom;
-  const startX = Math.floor(offX / gridSize) * gridSize;
-  const startY = Math.floor(offY / gridSize) * gridSize;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const lineColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.07)';
+function onMouseUp(e){
+  if(drawObj){
+    drawObj.set({ selectable:true, evented:true,
+      cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false });
+    const w = drawObj.width || drawObj.radius*2 || 10;
+    const h = drawObj.height || drawObj.radius*2 || 10;
+    if(w < 5 && h < 5){ canvas.remove(drawObj); }
+    else { canvas.setActiveObject(drawObj); }
+    drawObj = null;
+    drawStart = null;
+    autoSave();
+  }
+}
 
-  for(let x = startX; x < offX + w + gridSize; x += gridSize){
-    const line = new fabric.Line([x, offY - gridSize, x, offY + h + gridSize], {
-      stroke: lineColor, strokeWidth: 1 / zoom, selectable: false, evented: false, _isGrid: true
-    });
-    canvas.add(line);
-    canvas.sendToBack(line);
+function onWheel(e){
+  const delta = e.e.deltaY;
+  let z = canvas.getZoom() * (delta > 0 ? 0.93 : 1.07);
+  z = Math.max(0.05, Math.min(8, z));
+  canvas.zoomToPoint({ x: e.e.offsetX, y: e.e.offsetY }, z);
+  document.getElementById('zoomDisp').textContent = Math.round(z * 100) + '%';
+  e.e.preventDefault();
+  e.e.stopPropagation();
+  drawGrid(); drawRulers();
+}
+
+function onObjMoving(e){
+  if(!snapOn) return;
+  const obj = e.target;
+  const g = gridPx || 24;
+  obj.set({ left: Math.round(obj.left / g) * g, top: Math.round(obj.top / g) * g });
+}
+
+function onSelect(){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  document.getElementById('stSel').textContent = obj._name || 'Object';
+  if(activeTab() === 'properties') renderTab('properties');
+  updateAreaDisplay();
+}
+
+function onDeselect(){
+  document.getElementById('stSel').textContent = 'No selection';
+  document.getElementById('stArea').textContent = '';
+  if(activeTab() === 'properties') renderTab('properties');
+}
+
+/* ── Keys ──────────────────────────────────────── */
+function onKey(e){
+  const tag = document.activeElement?.tagName;
+  if(tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if(document.activeElement?.isContentEditable) return;
+  const ctrl = e.ctrlKey || e.metaKey;
+  if(e.key === 'Delete' || e.key === 'Backspace') deleteSelected();
+  if(ctrl && e.key === 'z'){ e.preventDefault(); undoAction(); }
+  if(ctrl && e.key === 'y'){ e.preventDefault(); redoAction(); }
+  if(ctrl && e.key === 'd'){ e.preventDefault(); duplicateSelected(); }
+  if(ctrl && e.key === 'c'){ e.preventDefault(); copySelected(); }
+  if(ctrl && e.key === 'v'){ e.preventDefault(); pasteClipboard(); }
+  if(ctrl && e.key === 'g'){ e.preventDefault(); groupSelected(); }
+  if(ctrl && e.key === 'a'){ e.preventDefault(); canvas.discardActiveObject(); const sel = new fabric.ActiveSelection(canvas.getObjects().filter(o=>!o._isGrid&&o.selectable),{canvas}); canvas.setActiveObject(sel); canvas.requestRenderAll(); }
+  if(!ctrl){
+    if(e.key === 'v' || e.key === 'V') setTool('select');
+    if(e.key === 'h' || e.key === 'H') setTool('pan');
+    if(e.key === 'r' || e.key === 'R') setTool('rect');
+    if(e.key === 'c' || e.key === 'C') setTool('circle');
+    if(e.key === 'p' || e.key === 'P') setTool('poly');
+    if(e.key === 'l' || e.key === 'L') setTool('line');
+    if(e.key === 'm' || e.key === 'M') setTool('measure');
+    if(e.key === 't' || e.key === 'T') setTool('text');
+    if(e.key === 'Escape'){ setTool('select'); canvas.discardActiveObject(); canvas.requestRenderAll(); }
   }
-  for(let y = startY; y < offY + h + gridSize; y += gridSize){
-    const line = new fabric.Line([offX - gridSize, y, offX + w + gridSize, y], {
-      stroke: lineColor, strokeWidth: 1 / zoom, selectable: false, evented: false, _isGrid: true
-    });
-    canvas.add(line);
-    canvas.sendToBack(line);
-  }
+}
+
+/* ── Unit conversion ───────────────────────────── */
+function pxToFt(px){ return px / PPF; }
+function ftToPx(ft){ return ft * PPF; }
+function toDisplay(px){
+  if(curUnit === 'px') return Math.round(px) + '';
+  const ft = pxToFt(px);
+  if(curUnit === 'm') return (ft * 0.3048).toFixed(1) + 'm';
+  if(ft >= 1) return ft.toFixed(1) + "'";
+  return (ft * 12).toFixed(0) + '"';
+}
+function toDisplayArea(pxSq){
+  const ftSq = pxSq / (PPF * PPF);
+  if(curUnit === 'm') return (ftSq * 0.0929).toFixed(1) + ' m²';
+  return Math.round(ftSq) + ' sq ft';
+}
+
+function setUnit(u){
+  curUnit = u;
+  document.getElementById('rulerCorner').textContent = u;
+  document.getElementById('unitSel').value = u;
+  drawRulers();
+  updateGridLabel();
 }
 
 function setGrid(val){
-  gridSize = parseInt(val);
+  gridPx = val;
   drawGrid();
+  updateGridLabel();
+}
+
+function updateGridLabel(){
+  const el = document.getElementById('stScale');
+  if(!gridPx){ el.textContent = 'Grid off'; return; }
+  el.textContent = '1 grid = ' + toDisplay(gridPx);
 }
 
 function toggleSnap(){
   snapOn = !snapOn;
-  document.getElementById('snapBtn').textContent = 'Snap: ' + (snapOn ? 'On' : 'Off');
-  document.getElementById('snapBtn').classList.toggle('active', snapOn);
+  document.getElementById('snapBtn').classList.toggle('on', snapOn);
+  document.getElementById('snapBtn').textContent = snapOn ? 'Snap' : 'No Snap';
 }
 
-/* ── Zoom ──────────────────────────────────────── */
-function zoomCanvas(delta){
-  let zoom = canvas.getZoom() + delta;
-  zoom = Math.max(0.1, Math.min(5, zoom));
-  canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, zoom);
-  document.getElementById('zoomDisplay').textContent = Math.round(zoom * 100) + '%';
-  drawGrid();
-}
-function resetZoom(){
-  canvas.setViewportTransform([1,0,0,1,0,0]);
-  document.getElementById('zoomDisplay').textContent = '100%';
-  drawGrid();
+function snapPoint(p){
+  if(!snapOn || !gridPx) return p;
+  return { x: Math.round(p.x / gridPx) * gridPx, y: Math.round(p.y / gridPx) * gridPx };
 }
 
-/* ── Add elements ──────────────────────────────── */
-function addElement(item){
+/* ── Grid ──────────────────────────────────────── */
+function drawGrid(){
+  canvas.getObjects().filter(o => o._isGrid).forEach(o => canvas.remove(o));
+  if(!gridPx) return;
+  const z = canvas.getZoom(), vpt = canvas.viewportTransform;
+  const w = canvas.width / z, h = canvas.height / z;
+  const ox = -vpt[4] / z, oy = -vpt[5] / z;
+  const sx = Math.floor(ox / gridPx) * gridPx, sy = Math.floor(oy / gridPx) * gridPx;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const col = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  const col2 = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.12)';
+  const majorEvery = gridPx <= 12 ? 5 : gridPx <= 24 ? 5 : 2;
+
+  let idx = 0;
+  for(let x = sx; x < ox + w + gridPx; x += gridPx){
+    const major = Math.round((x / gridPx)) % majorEvery === 0;
+    const line = new fabric.Line([x, oy - gridPx, x, oy + h + gridPx], {
+      stroke: major ? col2 : col, strokeWidth: (major ? 1.5 : 0.5) / z, selectable:false, evented:false, _isGrid:true, excludeFromExport:true
+    });
+    canvas.add(line); canvas.sendToBack(line);
+  }
+  for(let y = sy; y < oy + h + gridPx; y += gridPx){
+    const major = Math.round((y / gridPx)) % majorEvery === 0;
+    const line = new fabric.Line([ox - gridPx, y, ox + w + gridPx, y], {
+      stroke: major ? col2 : col, strokeWidth: (major ? 1.5 : 0.5) / z, selectable:false, evented:false, _isGrid:true, excludeFromExport:true
+    });
+    canvas.add(line); canvas.sendToBack(line);
+  }
+}
+
+/* ── Rulers ────────────────────────────────────── */
+function drawRulers(){
+  const hC = document.getElementById('rulerH');
+  const vC = document.getElementById('rulerV');
+  const wrap = document.getElementById('canvasWrap');
+  if(!canvas) return;
+  const z = canvas.getZoom(), vpt = canvas.viewportTransform;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  hC.width = W; hC.height = 22;
+  vC.width = 22; vC.height = H;
+  const hCtx = hC.getContext('2d'), vCtx = vC.getContext('2d');
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const fg = isDark ? '#8a9a8a' : '#775d2f';
+  const tick = isDark ? '#3a4a3a' : '#d1c7a3';
+
+  hCtx.clearRect(0,0,W,22);
+  vCtx.clearRect(0,0,22,H);
+  hCtx.font = '9px -apple-system,sans-serif';
+  hCtx.fillStyle = fg;
+  vCtx.font = '9px -apple-system,sans-serif';
+  vCtx.fillStyle = fg;
+
+  const step = pickRulerStep(z);
+  const ox = -vpt[4] / z, oy = -vpt[5] / z;
+  const sxr = Math.floor(ox / step) * step;
+  for(let x = sxr; x < ox + W / z; x += step){
+    const sx = (x * z + vpt[4]);
+    hCtx.strokeStyle = tick; hCtx.lineWidth = 0.5;
+    hCtx.beginPath(); hCtx.moveTo(sx, 16); hCtx.lineTo(sx, 22); hCtx.stroke();
+    const label = curUnit === 'px' ? Math.round(x) : curUnit === 'm' ? (pxToFt(x) * 0.3048).toFixed(0) : pxToFt(x).toFixed(0);
+    hCtx.fillText(label, sx + 2, 13);
+  }
+  const syr = Math.floor(oy / step) * step;
+  for(let y = syr; y < oy + H / z; y += step){
+    const sy = (y * z + vpt[5]);
+    vCtx.strokeStyle = tick; vCtx.lineWidth = 0.5;
+    vCtx.beginPath(); vCtx.moveTo(16, sy); vCtx.lineTo(22, sy); vCtx.stroke();
+    vCtx.save(); vCtx.translate(11, sy + 2); vCtx.rotate(-Math.PI / 2);
+    const label = curUnit === 'px' ? Math.round(y) : curUnit === 'm' ? (pxToFt(y) * 0.3048).toFixed(0) : pxToFt(y).toFixed(0);
+    vCtx.fillText(label, 0, 0); vCtx.restore();
+  }
+}
+
+function pickRulerStep(z){
+  const target = 60 / z;
+  const steps = [6, 12, 24, 48, 60, 120, 240, 480, 600, 1200];
+  for(const s of steps) if(s >= target) return s;
+  return 1200;
+}
+
+/* ── Add plant element ─────────────────────────── */
+function addPlant(item, section){
   saveUndo();
-  const center = canvas.getCenter();
-  const vpt = canvas.viewportTransform;
-  const zoom = canvas.getZoom();
-  const cx = (center.left - vpt[4]) / zoom;
-  const cy = (center.top - vpt[5]) / zoom;
+  const vpt = canvas.viewportTransform, z = canvas.getZoom();
+  const cx = (canvas.width / 2 - vpt[4]) / z;
+  const cy = (canvas.height / 2 - vpt[5]) / z;
 
+  const layer = section?.layer || (item.shape ? 'hardscape' : 'planting');
+  const isTree = !item.shape;
+  let spreadPx = ftToPx(item.spread || 4);
   let obj;
-  const base = {
-    left: cx - item.w / 2,
-    top: cy - item.h / 2,
-    fill: item.color,
-    stroke: 'rgba(0,0,0,0.15)',
-    strokeWidth: 1,
-    cornerColor: '#7da24b',
-    cornerStrokeColor: '#fff',
-    cornerSize: 10,
-    transparentCorners: false,
-    _plantName: item.name,
-    _plantIcon: item.icon,
-    _plantType: item.section || '',
-  };
 
-  if(item.shape === 'circle'){
-    obj = new fabric.Circle({ ...base, radius: item.w / 2, originX:'center', originY:'center', left:cx, top:cy });
-  } else if(item.shape === 'ellipse'){
-    obj = new fabric.Ellipse({ ...base, rx: item.w / 2, ry: item.h / 2, originX:'center', originY:'center', left:cx, top:cy });
+  if(isTree){
+    const r = spreadPx / 2;
+    const canopy = new fabric.Circle({
+      radius: r, fill: item.color, opacity: 0.7,
+      stroke: darken(item.color, 30), strokeWidth: 1.5,
+      originX:'center', originY:'center',
+    });
+    const inner = new fabric.Circle({
+      radius: r * 0.6, fill: lighten(item.color, 15), opacity: 0.5,
+      originX:'center', originY:'center',
+    });
+    const trunk = new fabric.Circle({
+      radius: Math.max(2, r * 0.08), fill: '#5a4030',
+      stroke:'#3a2a1a', strokeWidth: 1,
+      originX:'center', originY:'center',
+    });
+    const label = new fabric.Text(item.name, {
+      fontSize: Math.max(8, Math.min(11, r * 0.3)),
+      fill: '#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700',
+      textAlign:'center', originX:'center', originY:'center',
+      shadow:'0 1px 2px rgba(0,0,0,0.6)',
+    });
+    obj = new fabric.Group([canopy, inner, trunk, label], {
+      left: cx, top: cy, originX:'center', originY:'center',
+    });
   } else {
-    obj = new fabric.Rect({ ...base, width: item.w, height: item.h, rx: 4, ry: 4 });
+    const w = ftToPx(item.w || 10), h = ftToPx(item.ht || item.w || 6);
+    if(item.shape === 'circle'){
+      obj = new fabric.Circle({ radius: w/2, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, originX:'center', originY:'center', left:cx, top:cy });
+    } else if(item.shape === 'ellipse'){
+      obj = new fabric.Ellipse({ rx: w/2, ry: h/2, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, originX:'center', originY:'center', left:cx, top:cy });
+    } else {
+      obj = new fabric.Rect({ width: w, height: h, fill: item.color, opacity:.8, stroke: darken(item.color,20), strokeWidth:1.5, rx:2, ry:2, left: cx - w/2, top: cy - h/2 });
+    }
+    if(!obj._objects){
+      const label = new fabric.Text(item.name, {
+        fontSize: Math.max(8, Math.min(11, Math.min(w, h) * 0.2)),
+        fill:'#fff', fontFamily:'-apple-system,sans-serif', fontWeight:'700',
+        textAlign:'center', originX:'center', originY:'center',
+        shadow:'0 1px 2px rgba(0,0,0,0.5)',
+      });
+      const shape = obj;
+      obj = new fabric.Group([shape, label], {
+        left: shape.left, top: shape.top,
+        originX: shape.originX || 'left', originY: shape.originY || 'top',
+      });
+    }
   }
 
-  // Add label
-  const label = new fabric.Text(item.icon + ' ' + item.name, {
-    fontSize: 11,
-    fill: '#fff',
-    fontFamily: '-apple-system, sans-serif',
-    fontWeight: '600',
-    textAlign: 'center',
-    originX: 'center',
-    originY: 'center',
-    shadow: '0 1px 2px rgba(0,0,0,0.5)',
+  obj.set({
+    cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false,
+    _name: item.name, _layer: layer, _type: isTree ? 'plant' : 'hardscape',
+    _data: item, _cost: item.cost || 0, _spread: item.spread,
+    _sun: item.sun, _water: item.water,
   });
 
-  const group = new fabric.Group([obj, label], {
-    left: base.left || cx - item.w / 2,
-    top: base.top || cy - item.h / 2,
-    cornerColor: '#7da24b',
-    cornerStrokeColor: '#fff',
-    cornerSize: 10,
-    transparentCorners: false,
-    _plantName: item.name,
-    _plantIcon: item.icon,
-    _plantType: item.section || '',
-    _itemData: item,
-  });
-
-  canvas.add(group);
-  canvas.setActiveObject(group);
+  canvas.add(obj);
+  canvas.setActiveObject(obj);
   autoSave();
   updateStatus();
 }
 
-/* ── Selection ─────────────────────────────────── */
-function updateSelection(){
-  const obj = canvas.getActiveObject();
-  if(!obj) return;
-  const name = obj._plantName || 'Object';
-  document.getElementById('statusSelected').textContent = name;
-  if(document.querySelector('.sidebar-tab.active')?.textContent === 'Properties') renderTab('properties');
+/* ── Color helpers ─────────────────────────────── */
+function darken(hex, amt){
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.max(0, r - amt); g = Math.max(0, g - amt); b = Math.max(0, b - amt);
+  return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
+}
+function lighten(hex, amt){
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.min(255, r + amt); g = Math.min(255, g + amt); b = Math.min(255, b + amt);
+  return '#' + [r,g,b].map(c => c.toString(16).padStart(2,'0')).join('');
 }
 
+/* ── Object actions ────────────────────────────── */
 function deleteSelected(){
   const objs = canvas.getActiveObjects();
   if(!objs.length) return;
@@ -440,292 +825,445 @@ function duplicateSelected(){
   const obj = canvas.getActiveObject();
   if(!obj) return;
   saveUndo();
-  obj.clone(cloned => {
-    cloned.set({ left: cloned.left + 20, top: cloned.top + 20 });
-    if(obj._plantName) cloned._plantName = obj._plantName;
-    if(obj._plantIcon) cloned._plantIcon = obj._plantIcon;
-    if(obj._plantType) cloned._plantType = obj._plantType;
-    if(obj._itemData) cloned._itemData = obj._itemData;
-    canvas.add(cloned);
-    canvas.setActiveObject(cloned);
+  obj.clone(c => {
+    c.set({ left: c.left + 20, top: c.top + 20 });
+    CUSTOM_PROPS.forEach(p => { if(obj[p] !== undefined) c[p] = obj[p]; });
+    canvas.add(c);
+    canvas.setActiveObject(c);
     autoSave();
   });
 }
 
+function copySelected(){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  obj.clone(c => { clipboard = c; CUSTOM_PROPS.forEach(p => { if(obj[p]!==undefined) c[p]=obj[p]; }); });
+}
+
+function pasteClipboard(){
+  if(!clipboard) return;
+  saveUndo();
+  clipboard.clone(c => {
+    c.set({ left: c.left + 20, top: c.top + 20 });
+    CUSTOM_PROPS.forEach(p => { if(clipboard[p]!==undefined) c[p]=clipboard[p]; });
+    canvas.add(c);
+    canvas.setActiveObject(c);
+    clipboard = c;
+    autoSave();
+  });
+}
+
+function bringFront(){ const o=canvas.getActiveObject(); if(o){canvas.bringToFront(o);autoSave();} }
+function sendBack(){ const o=canvas.getActiveObject(); if(o){canvas.sendToBack(o);drawGrid();autoSave();} }
+
+function lockSelected(){
+  const o = canvas.getActiveObject();
+  if(!o) return;
+  const locked = !o.lockMovementX;
+  o.set({ lockMovementX:locked, lockMovementY:locked, lockRotation:locked, lockScalingX:locked, lockScalingY:locked, hasControls:!locked, _locked:locked });
+  o.set('selectable', !locked);
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
+}
+
+function groupSelected(){
+  const objs = canvas.getActiveObjects();
+  if(objs.length < 2) return;
+  saveUndo();
+  const group = new fabric.Group(objs, { cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false, _name:'Group', _layer:'annotations' });
+  objs.forEach(o => canvas.remove(o));
+  canvas.add(group);
+  canvas.setActiveObject(group);
+  autoSave();
+}
+
+function ungroupSelected(){
+  const obj = canvas.getActiveObject();
+  if(!obj || obj.type !== 'group') return;
+  saveUndo();
+  const items = obj.getObjects();
+  obj._restoreObjectsState();
+  canvas.remove(obj);
+  items.forEach(o => { canvas.add(o); o.set({ cornerColor:'#7da24b', cornerStrokeColor:'#fff', cornerSize:8, transparentCorners:false }); });
+  canvas.requestRenderAll();
+  autoSave();
+}
+
 /* ── Undo / Redo ───────────────────────────────── */
 function saveUndo(){
-  const json = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
-  json.objects = json.objects.filter(o => !o._isGrid);
+  const json = canvas.toJSON(CUSTOM_PROPS);
+  json.objects = json.objects.filter(o => !o._isGrid && !o._isMeasure);
   undoStack.push(JSON.stringify(json));
   if(undoStack.length > maxUndo) undoStack.shift();
   redoStack = [];
 }
-
 function undoAction(){
   if(!undoStack.length) return;
-  const current = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
-  current.objects = current.objects.filter(o => !o._isGrid);
-  redoStack.push(JSON.stringify(current));
-  const prev = JSON.parse(undoStack.pop());
-  canvas.loadFromJSON(prev, () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
+  const cur = canvas.toJSON(CUSTOM_PROPS);
+  cur.objects = cur.objects.filter(o => !o._isGrid && !o._isMeasure);
+  redoStack.push(JSON.stringify(cur));
+  canvas.loadFromJSON(JSON.parse(undoStack.pop()), () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
 }
-
 function redoAction(){
   if(!redoStack.length) return;
-  const current = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
-  current.objects = current.objects.filter(o => !o._isGrid);
-  undoStack.push(JSON.stringify(current));
-  const next = JSON.parse(redoStack.pop());
-  canvas.loadFromJSON(next, () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
+  const cur = canvas.toJSON(CUSTOM_PROPS);
+  cur.objects = cur.objects.filter(o => !o._isGrid && !o._isMeasure);
+  undoStack.push(JSON.stringify(cur));
+  canvas.loadFromJSON(JSON.parse(redoStack.pop()), () => { drawGrid(); canvas.requestRenderAll(); autoSave(); updateStatus(); });
+}
+
+/* ── Measure ───────────────────────────────────── */
+function clearMeasure(){
+  if(measureLine){ canvas.remove(measureLine); measureLine = null; }
+  measureStart = null;
+  document.getElementById('stArea').textContent = '';
+}
+
+/* ── Area display ──────────────────────────────── */
+function updateAreaDisplay(){
+  const obj = canvas.getActiveObject();
+  if(!obj) return;
+  let area = 0;
+  if(obj.type === 'rect' || (obj.type === 'group' && obj.width && obj.height)){
+    area = (obj.width * obj.scaleX) * (obj.height * obj.scaleY);
+  } else if(obj.type === 'circle'){
+    area = Math.PI * (obj.radius * obj.scaleX) ** 2;
+  } else if(obj.type === 'ellipse'){
+    area = Math.PI * (obj.rx * obj.scaleX) * (obj.ry * obj.scaleY);
+  }
+  if(area > 0) document.getElementById('stArea').textContent = 'Area: ' + toDisplayArea(area);
 }
 
 /* ── Background image ──────────────────────────── */
-function uploadBackground(){
+function uploadBg(){
   const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*';
+  input.type = 'file'; input.accept = 'image/*';
   input.onchange = e => {
-    const file = e.target.files[0];
-    if(!file) return;
+    const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       fabric.Image.fromURL(ev.target.result, img => {
         const scale = Math.min(canvas.width / img.width, canvas.height / img.height, 1);
         img.scale(scale);
-        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-          originX: 'left', originY: 'top'
-        });
-        saveUndo();
-        autoSave();
+        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), { originX:'left', originY:'top' });
+        saveUndo(); autoSave();
       });
     };
     reader.readAsDataURL(file);
   };
   input.click();
 }
+function clearBg(){ canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas)); saveUndo(); autoSave(); }
 
-function clearBackground(){
-  canvas.setBackgroundImage(null, canvas.renderAll.bind(canvas));
-  saveUndo();
-  autoSave();
+/* ── Zoom ──────────────────────────────────────── */
+function zoomBy(d){
+  let z = canvas.getZoom() + d;
+  z = Math.max(0.05, Math.min(8, z));
+  canvas.zoomToPoint({ x: canvas.width/2, y: canvas.height/2 }, z);
+  document.getElementById('zoomDisp').textContent = Math.round(z*100) + '%';
+  drawGrid(); drawRulers();
+}
+function zoomFit(){
+  canvas.setViewportTransform([1,0,0,1,0,0]);
+  document.getElementById('zoomDisp').textContent = '100%';
+  drawGrid(); drawRulers();
+}
+function resizeCanvas(){
+  const wrap = document.getElementById('canvasWrap');
+  canvas.setDimensions({ width: wrap.clientWidth, height: wrap.clientHeight });
+  drawGrid();
+}
+
+/* ── Export ─────────────────────────────────────── */
+function exportPNG(){
+  canvas.getObjects().filter(o => o._isGrid).forEach(o => o.set('visible', false));
+  canvas.renderAll();
+  const dataURL = canvas.toDataURL({ format:'png', multiplier:2 });
+  canvas.getObjects().filter(o => o._isGrid).forEach(o => o.set('visible', true));
+  canvas.renderAll();
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = (designs[currentDesignId]?.name || 'garden-plan') + '.png';
+  a.click();
 }
 
 /* ── Save / Load ───────────────────────────────── */
 function autoSave(){
   if(!currentDesignId) return;
-  const json = canvas.toJSON(['_plantName','_plantIcon','_plantType','_itemData']);
-  json.objects = json.objects.filter(o => !o._isGrid);
+  const json = canvas.toJSON(CUSTOM_PROPS);
+  json.objects = json.objects.filter(o => !o._isGrid && !o._isMeasure);
   designs[currentDesignId] = {
     name: designs[currentDesignId]?.name || 'Untitled',
-    data: json,
-    updated: new Date().toISOString(),
+    data: json, updated: new Date().toISOString(),
   };
-  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
+  try { localStorage.setItem('gp_designs', JSON.stringify(designs)); } catch{}
 }
-
 function autoLoad(){
   const keys = Object.keys(designs);
-  if(keys.length){
-    currentDesignId = keys[keys.length - 1];
-    loadDesign(currentDesignId);
-  } else {
-    newDesign();
-  }
+  if(keys.length){ currentDesignId = keys[keys.length-1]; loadDesign(currentDesignId); }
+  else newDesign();
 }
-
 function newDesign(){
   const id = 'design_' + Date.now();
-  designs[id] = { name: 'Untitled Garden', data: null, updated: new Date().toISOString() };
+  designs[id] = { name:'Untitled Garden', data:null, updated: new Date().toISOString() };
   currentDesignId = id;
-  canvas.clear();
-  drawGrid();
-  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
+  canvas.clear(); drawGrid();
+  try { localStorage.setItem('gp_designs', JSON.stringify(designs)); } catch{}
   updateStatus();
 }
-
 function loadDesign(id){
   currentDesignId = id;
   const d = designs[id];
-  if(d && d.data){
-    canvas.loadFromJSON(d.data, () => { drawGrid(); canvas.requestRenderAll(); updateStatus(); });
-  } else {
-    canvas.clear();
-    drawGrid();
-    updateStatus();
-  }
+  if(d && d.data) canvas.loadFromJSON(d.data, () => { drawGrid(); canvas.requestRenderAll(); updateStatus(); });
+  else { canvas.clear(); drawGrid(); updateStatus(); }
 }
-
 function deleteDesign(id){
   if(!confirm('Delete "' + (designs[id]?.name || 'Untitled') + '"?')) return;
   delete designs[id];
-  localStorage.setItem('nb_garden_designs', JSON.stringify(designs));
-  if(currentDesignId === id){
-    const keys = Object.keys(designs);
-    if(keys.length) loadDesign(keys[keys.length - 1]);
-    else newDesign();
-  }
+  try { localStorage.setItem('gp_designs', JSON.stringify(designs)); } catch{}
+  if(currentDesignId === id){ const k = Object.keys(designs); if(k.length) loadDesign(k[k.length-1]); else newDesign(); }
   renderTab('designs');
 }
+function renameDesign(id, name){ if(designs[id]){ designs[id].name = name; try{localStorage.setItem('gp_designs',JSON.stringify(designs));}catch{} } }
 
-function renameDesign(id, name){
-  if(designs[id]){ designs[id].name = name; localStorage.setItem('nb_garden_designs', JSON.stringify(designs)); }
+/* ── Context menu ──────────────────────────────── */
+function showCtx(e){
+  const m = document.getElementById('ctxMenu');
+  m.style.display = 'block';
+  m.style.left = e.clientX + 'px';
+  m.style.top = e.clientY + 'px';
+  e.preventDefault();
 }
+function hideCtx(){ document.getElementById('ctxMenu').style.display = 'none'; }
 
-/* ── Sidebar tabs ──────────────────────────────── */
+/* ── Sidebar ───────────────────────────────────── */
+function activeTab(){ return document.querySelector('.sb-tab.active')?.textContent?.toLowerCase() || 'plants'; }
 function switchTab(tab, btn){
-  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sb-tab').forEach(t => t.classList.remove('active'));
   if(btn) btn.classList.add('active');
   renderTab(tab);
 }
-
 function renderTab(tab){
-  const el = document.getElementById('sidebarContent');
-  if(tab === 'library') renderLibrary(el);
-  else if(tab === 'properties') renderProperties(el);
+  const el = document.getElementById('sbContent');
+  if(tab === 'library' || tab === 'plants') renderLibrary(el);
+  else if(tab === 'layers') renderLayers(el);
+  else if(tab === 'properties' || tab === 'props') renderProperties(el);
+  else if(tab === 'budget') renderBudget(el);
   else if(tab === 'designs') renderDesigns(el);
 }
 
+/* ─ Library tab ─ */
+let searchTerm = '';
 function renderLibrary(el){
-  let html = '';
-  // Background upload
-  html += `<div class="lib-section">
-    <div class="lib-section-title">Background</div>
-    <div style="display:flex;gap:6px;">
-      <button class="btn-sm btn-primary" onclick="uploadBackground()" style="flex:1">Upload Site Photo</button>
-      <button class="btn-sm prop-btn" onclick="clearBackground()">Clear</button>
-    </div>
-  </div>`;
-  LIBRARY.forEach(sec => {
-    html += `<div class="lib-section"><div class="lib-section-title">${sec.section}</div><div class="lib-grid">`;
-    sec.items.forEach((item, i) => {
-      html += `<div class="lib-item" onclick='addElement(${JSON.stringify({...item, section:sec.section})})'>
-        <span class="lib-icon">${item.icon}</span>${item.name}</div>`;
+  let html = '<input class="lib-search" placeholder="Search plants, materials..." oninput="searchTerm=this.value.toLowerCase();renderTab(\'library\')" value="' + (searchTerm||'') + '">';
+  html += `<div class="lib-sec" style="margin-bottom:10px">
+    <div style="display:flex;gap:5px">
+      <button class="btn-sm btn-primary" onclick="uploadBg()" style="flex:1">Upload Site Photo</button>
+      <button class="btn-sm prop-btn" onclick="clearBg()">Clear</button>
+    </div></div>`;
+
+  PLANTS.forEach(sec => {
+    const filtered = sec.items.filter(i => !searchTerm || i.name.toLowerCase().includes(searchTerm));
+    if(!filtered.length) return;
+    html += `<div class="lib-sec">
+      <div class="lib-sec-hd" onclick="this.classList.toggle('collapsed');this.nextElementSibling.style.display=this.classList.contains('collapsed')?'none':'grid'">
+        <span class="chev">▾</span> ${sec.section} <span style="font-weight:400;color:var(--text2)">(${filtered.length})</span>
+      </div>
+      <div class="lib-grid">`;
+    filtered.forEach(item => {
+      const sunIcon = SUN_ICONS[item.sun] || '';
+      const costStr = item.unit ? '$' + item.cost + '/' + item.unit : '$' + item.cost;
+      const spreadStr = item.spread > 1 ? item.spread + "'" : '';
+      html += `<div class="lib-item" onclick='addPlant(${JSON.stringify(item)}, ${JSON.stringify({layer:sec.layer})})'>
+        <div class="lib-icon-wrap" style="background:${item.color}20;border:2px solid ${item.color}">
+          <div style="width:20px;height:20px;border-radius:50%;background:${item.color};opacity:.8"></div>
+        </div>
+        <div class="lib-item-info">
+          <div class="lib-item-name">${item.name}</div>
+          <div class="lib-item-meta">${sunIcon} ${spreadStr} ${costStr}</div>
+        </div>
+      </div>`;
     });
-    html += `</div></div>`;
+    html += '</div></div>';
   });
   el.innerHTML = html;
+  if(searchTerm) el.querySelector('.lib-search')?.focus();
 }
 
-function renderProperties(el){
-  const obj = canvas.getActiveObject();
-  if(!obj){
-    el.innerHTML = '<div class="empty-state">Select an element to edit its properties</div>';
-    return;
-  }
-  const name = obj._plantName || 'Object';
-  const icon = obj._plantIcon || '';
-  el.innerHTML = `
-    <div class="prop-group">
-      <div class="prop-label">Element</div>
-      <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${icon} ${name}</div>
-    </div>
-    <div class="prop-group">
-      <div class="prop-label">Position</div>
-      <div class="prop-row">
-        <span class="prop-unit">X</span>
-        <input class="prop-input" type="number" value="${Math.round(obj.left)}" onchange="setProp('left',+this.value)">
-        <span class="prop-unit">Y</span>
-        <input class="prop-input" type="number" value="${Math.round(obj.top)}" onchange="setProp('top',+this.value)">
-      </div>
-    </div>
-    <div class="prop-group">
-      <div class="prop-label">Size</div>
-      <div class="prop-row">
-        <span class="prop-unit">W</span>
-        <input class="prop-input" type="number" value="${Math.round(obj.width * obj.scaleX)}" onchange="setSize('w',+this.value)">
-        <span class="prop-unit">H</span>
-        <input class="prop-input" type="number" value="${Math.round(obj.height * obj.scaleY)}" onchange="setSize('h',+this.value)">
-      </div>
-      <div class="prop-row">
-        <span class="prop-unit">↻</span>
-        <input class="prop-input" type="number" value="${Math.round(obj.angle)}" onchange="setProp('angle',+this.value)" step="15">
-        <span class="prop-unit">deg</span>
-      </div>
-    </div>
-    <div class="prop-group">
-      <div class="prop-label">Appearance</div>
-      <div class="prop-row">
-        <span class="prop-unit" style="width:auto">Opacity</span>
-        <input class="prop-input" type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="setProp('opacity',+this.value)">
-      </div>
-    </div>
-    <div class="prop-group">
-      <div class="prop-label">Actions</div>
-      <div class="prop-row">
-        <button class="prop-btn" onclick="duplicateSelected()">Duplicate</button>
-        <button class="prop-btn" onclick="bringForward()">↑ Forward</button>
-        <button class="prop-btn" onclick="sendBackward()">↓ Back</button>
-        <button class="prop-btn danger" onclick="deleteSelected()">Delete</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderDesigns(el){
-  const keys = Object.keys(designs).reverse();
-  let html = `<button class="btn-sm btn-primary" onclick="newDesign();renderTab('designs')" style="width:100%;margin-bottom:10px;">+ New Design</button>`;
-  if(!keys.length){
-    html += '<div class="empty-state">No saved designs</div>';
-  }
-  keys.forEach(id => {
-    const d = designs[id];
-    const active = id === currentDesignId;
-    const date = d.updated ? new Date(d.updated).toLocaleDateString() : '';
-    html += `<div class="design-item${active?' active':''}" onclick="loadDesign('${id}');renderTab('designs')">
-      <div class="design-name" contenteditable="true" onblur="renameDesign('${id}',this.textContent)">${d.name || 'Untitled'}</div>
-      <span class="design-date">${date}</span>
-      <button class="design-del" onclick="event.stopPropagation();deleteDesign('${id}')">×</button>
+/* ─ Layers tab ─ */
+function renderLayers(el){
+  const counts = {};
+  canvas.getObjects().filter(o => !o._isGrid && !o._isMeasure).forEach(o => {
+    const l = o._layer || 'annotations';
+    counts[l] = (counts[l] || 0) + 1;
+  });
+  let html = '';
+  LAYERS.forEach(l => {
+    html += `<div class="layer-item${l.visible?' active':''}">
+      <div class="layer-vis${l.visible?'':' off'}" onclick="toggleLayer('${l.id}')" style="background:${l.color}20;color:${l.color}">${l.visible?'👁':'—'}</div>
+      <div class="layer-name" style="color:${l.visible?'var(--text)':'var(--text2)'}">${l.name}</div>
+      <span class="layer-count">${counts[l.id]||0}</span>
     </div>`;
   });
   el.innerHTML = html;
 }
+function toggleLayer(id){
+  const l = LAYERS.find(x => x.id === id);
+  if(!l) return;
+  l.visible = !l.visible;
+  canvas.getObjects().forEach(o => { if(o._layer === id) o.set('visible', l.visible); });
+  canvas.requestRenderAll();
+  renderTab('layers');
+}
 
-/* ── Property setters ──────────────────────────── */
+/* ─ Properties tab ─ */
+function renderProperties(el){
+  const obj = canvas.getActiveObject();
+  if(!obj){ el.innerHTML = '<div class="empty-state">Select an element to view its properties.<br><br>Use the toolbar to draw shapes, or click plants from the library to place them.</div>'; return; }
+  const name = obj._name || 'Object';
+  const data = obj._data;
+  const w = Math.round(obj.width * (obj.scaleX || 1));
+  const h = Math.round(obj.height * (obj.scaleY || 1));
+
+  let html = `<div class="prop-grp">
+    <div style="font-size:15px;font-weight:800;margin-bottom:4px">${name}</div>`;
+  if(data){
+    html += `<div style="font-size:10px;color:var(--text2);display:flex;gap:8px;flex-wrap:wrap">`;
+    if(data.sun) html += `<span>${SUN_ICONS[data.sun]} ${SUN_LABELS[data.sun]}</span>`;
+    if(data.water && data.water !== 'none') html += `<span>💧 ${WATER_LABELS[data.water]}</span>`;
+    if(data.spread > 1) html += `<span>↔ ${data.spread}' spread</span>`;
+    if(data.h) html += `<span>↕ ${data.h}' tall</span>`;
+    html += `</div>`;
+  }
+  html += `</div>`;
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Position</div>
+    <div class="prop-row"><span class="prop-u">X</span><input class="prop-in" type="number" value="${Math.round(obj.left)}" onchange="setProp('left',+this.value)">
+    <span class="prop-u">Y</span><input class="prop-in" type="number" value="${Math.round(obj.top)}" onchange="setProp('top',+this.value)"></div></div>`;
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Size (${curUnit})</div>
+    <div class="prop-row"><span class="prop-u">W</span><input class="prop-in" type="number" value="${toDisplay(w).replace(/[^0-9.]/g,'')}" onchange="setSizeFt('w',+this.value)">
+    <span class="prop-u">H</span><input class="prop-in" type="number" value="${toDisplay(h).replace(/[^0-9.]/g,'')}" onchange="setSizeFt('h',+this.value)"></div>
+    <div class="prop-row"><span class="prop-u">↻</span><input class="prop-in" type="number" value="${Math.round(obj.angle)}" onchange="setProp('angle',+this.value)" step="15"><span class="prop-u">°</span></div></div>`;
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Layer</div>
+    <select class="prop-in" onchange="setLayer(this.value)" style="flex:none;width:100%">`;
+  LAYERS.forEach(l => { html += `<option value="${l.id}"${obj._layer===l.id?' selected':''}>${l.name}</option>`; });
+  html += `</select></div>`;
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Appearance</div>
+    <div class="prop-row"><span class="prop-u" style="width:auto">Opacity</span>
+    <input class="prop-in" type="range" min="0.1" max="1" step="0.05" value="${obj.opacity}" oninput="setProp('opacity',+this.value)"></div></div>`;
+
+  if(data && data.cost){
+    html += `<div class="prop-grp"><div class="prop-lbl">Cost</div>
+      <div style="font-size:13px;font-weight:700;color:var(--asp)">$${data.cost}${data.unit ? ' / '+data.unit : ' each'}</div></div>`;
+  }
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Notes</div>
+    <textarea class="prop-in" rows="2" placeholder="Add notes..." onchange="canvas.getActiveObject()._notes=this.value;autoSave()">${obj._notes||''}</textarea></div>`;
+
+  html += `<div class="prop-grp"><div class="prop-lbl">Actions</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+    <button class="prop-btn" onclick="duplicateSelected()">Duplicate</button>
+    <button class="prop-btn" onclick="bringFront()">↑ Front</button>
+    <button class="prop-btn" onclick="sendBack()">↓ Back</button>
+    <button class="prop-btn" onclick="lockSelected()">${obj._locked?'Unlock':'Lock'}</button>
+    <button class="prop-btn danger" onclick="deleteSelected()">Delete</button>
+    </div></div>`;
+
+  el.innerHTML = html;
+}
+
 function setProp(prop, val){
-  const obj = canvas.getActiveObject();
-  if(!obj) return;
-  saveUndo();
-  obj.set(prop, val);
-  obj.setCoords();
-  canvas.requestRenderAll();
-  autoSave();
+  const obj = canvas.getActiveObject(); if(!obj) return;
+  saveUndo(); obj.set(prop, val); obj.setCoords(); canvas.requestRenderAll(); autoSave();
 }
-function setSize(dim, val){
-  const obj = canvas.getActiveObject();
-  if(!obj) return;
+function setSizeFt(dim, val){
+  const obj = canvas.getActiveObject(); if(!obj) return;
   saveUndo();
-  if(dim === 'w') obj.set('scaleX', val / obj.width);
-  else obj.set('scaleY', val / obj.height);
-  obj.setCoords();
-  canvas.requestRenderAll();
-  autoSave();
+  let px = curUnit === 'm' ? ftToPx(val / 0.3048) : curUnit === 'ft' ? ftToPx(val) : val;
+  if(dim === 'w') obj.set('scaleX', px / obj.width);
+  else obj.set('scaleY', px / obj.height);
+  obj.setCoords(); canvas.requestRenderAll(); autoSave();
 }
-function bringForward(){ const o=canvas.getActiveObject(); if(o){canvas.bringForward(o);autoSave();} }
-function sendBackward(){ const o=canvas.getActiveObject(); if(o){canvas.sendBackwards(o);autoSave();} }
+function setLayer(layer){
+  const obj = canvas.getActiveObject(); if(!obj) return;
+  obj._layer = layer; autoSave();
+}
+
+/* ─ Budget tab ─ */
+function renderBudget(el){
+  const items = {};
+  let total = 0;
+  canvas.getObjects().filter(o => !o._isGrid && !o._isMeasure).forEach(o => {
+    const d = o._data;
+    if(!d || !d.cost) return;
+    const key = d.name;
+    if(!items[key]) items[key] = { name: d.name, cost: d.cost, unit: d.unit, count: 0, subtotal: 0 };
+    items[key].count++;
+    if(d.unit === 'sq ft'){
+      const area = pxToFt(o.width * (o.scaleX||1)) * pxToFt(o.height * (o.scaleY||1));
+      items[key].subtotal += d.cost * area;
+    } else if(d.unit === 'lin ft'){
+      const len = pxToFt(o.width * (o.scaleX||1));
+      items[key].subtotal += d.cost * len;
+    } else {
+      items[key].subtotal += d.cost;
+    }
+  });
+
+  let html = '<div class="prop-lbl">Material & Plant Budget</div>';
+  const sorted = Object.values(items).sort((a,b) => b.subtotal - a.subtotal);
+  if(!sorted.length){
+    html += '<div class="empty-state">Add plants and materials to see cost estimates.</div>';
+  } else {
+    sorted.forEach(it => {
+      total += it.subtotal;
+      html += `<div class="budget-row"><span>${it.name} × ${it.count}</span><span>$${Math.round(it.subtotal).toLocaleString()}</span></div>`;
+    });
+    html += `<div class="budget-total">Total Estimate: $${Math.round(total).toLocaleString()}</div>`;
+    html += `<div style="font-size:9px;color:var(--text2);margin-top:4px">Estimates only — actual costs may vary by region and supplier.</div>`;
+  }
+  el.innerHTML = html;
+}
+
+/* ─ Designs tab ─ */
+function renderDesigns(el){
+  const keys = Object.keys(designs).reverse();
+  let html = `<button class="btn-sm btn-primary" onclick="newDesign();renderTab('designs')" style="width:100%;margin-bottom:8px">+ New Design</button>`;
+  keys.forEach(id => {
+    const d = designs[id], active = id === currentDesignId;
+    const date = d.updated ? new Date(d.updated).toLocaleDateString() : '';
+    html += `<div class="des-item${active?' active':''}" onclick="loadDesign('${id}');renderTab('designs')">
+      <div class="des-name" contenteditable="true" onblur="renameDesign('${id}',this.textContent)">${d.name||'Untitled'}</div>
+      <span class="des-date">${date}</span>
+      <button class="des-del" onclick="event.stopPropagation();deleteDesign('${id}')">×</button>
+    </div>`;
+  });
+  if(!keys.length) html += '<div class="empty-state">No saved designs yet</div>';
+  el.innerHTML = html;
+}
 
 /* ── Status ────────────────────────────────────── */
 function updateStatus(){
-  const count = canvas.getObjects().filter(o => !o._isGrid).length;
-  document.getElementById('statusObjects').textContent = count + ' object' + (count===1?'':'s');
+  const count = canvas.getObjects().filter(o => !o._isGrid && !o._isMeasure).length;
+  document.getElementById('stCount').textContent = count + ' object' + (count===1?'':'s');
 }
 
 /* ── Theme ─────────────────────────────────────── */
 function toggleTheme(){
-  const html = document.documentElement;
-  const isDark = html.getAttribute('data-theme') === 'dark';
-  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
-  localStorage.setItem('nb_garden_theme', isDark ? 'light' : 'dark');
-  drawGrid();
+  const d = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', d?'light':'dark');
+  try{localStorage.setItem('gp_theme', d?'light':'dark');}catch{}
+  drawGrid(); drawRulers();
 }
-(function(){
-  const saved = localStorage.getItem('nb_garden_theme');
-  if(saved) document.documentElement.setAttribute('data-theme', saved);
-})();
+(function(){ try{const s=localStorage.getItem('gp_theme'); if(s) document.documentElement.setAttribute('data-theme',s);}catch{} })();
 
-/* ── Mobile sidebar ────────────────────────────── */
+/* ── Mobile ────────────────────────────────────── */
 function toggleSidebar(){
   document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebarBackdrop').classList.toggle('open');
+  document.getElementById('sbBackdrop').classList.toggle('open');
 }
 </script>
 </body>
